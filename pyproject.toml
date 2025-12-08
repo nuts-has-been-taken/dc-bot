@@ -4,7 +4,9 @@ version = "0.1.0"
 description = "Ultrathink - A Python project"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "requests>=2.31.0",
+]
 
 [build-system]
 requires = ["hatchling"]
