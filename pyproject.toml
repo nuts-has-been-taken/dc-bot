@@ -1,0 +1,14 @@
+[project]
+name = "ultrathink"
+version = "0.1.0"
+description = "Ultrathink - A Python project"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = []
