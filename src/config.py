@@ -20,6 +20,10 @@ class Config:
     LLM_API_URL = os.getenv("LLM_API_URL", "https://api.openai.com/v1/chat/completions")
     LLM_MODEL = os.getenv("LLM_MODEL", "gpt-5")
 
+    # Discord Bot 設定
+    DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+    DISCORD_COMMAND_PREFIX = os.getenv("DISCORD_COMMAND_PREFIX", "!")
+
     @classmethod
     def validate(cls):
         """
@@ -31,6 +35,10 @@ class Config:
         if not cls.LLM_API_KEY:
             raise ValueError(
                 "LLM_API_KEY is not set. Please create a .env file with your API key."
+            )
+        if not cls.DISCORD_TOKEN:
+            raise ValueError(
+                "DISCORD_TOKEN is not set. Please create a .env file with your Discord bot token."
             )
 
     @classmethod
@@ -45,6 +53,19 @@ class Config:
             "api_key": cls.LLM_API_KEY,
             "api_url": cls.LLM_API_URL,
             "model": cls.LLM_MODEL,
+        }
+
+    @classmethod
+    def get_discord_config(cls):
+        """
+        獲取 Discord 配置。
+
+        Returns:
+            包含 Discord 配置的字典
+        """
+        return {
+            "token": cls.DISCORD_TOKEN,
+            "command_prefix": cls.DISCORD_COMMAND_PREFIX,
         }
 
 
