@@ -1,6 +1,7 @@
 """Discord Bot 指令模組。"""
 
 from discord.ext import commands
+from ..workflow.job_search import chat_with_job_search
 
 
 class BasicCommands(commands.Cog):
@@ -14,16 +15,6 @@ class BasicCommands(commands.Cog):
             bot: Discord Bot 實例
         """
         self.bot = bot
-
-    @commands.command(name="ping")
-    async def ping(self, ctx: commands.Context):
-        """
-        回應 Pong! 並顯示延遲時間。
-
-        使用方式: !ping
-        """
-        latency = round(self.bot.latency * 1000)
-        await ctx.send(f"🏓 Pong! 延遲: {latency}ms")
 
     @commands.command(name="hello")
     async def hello(self, ctx: commands.Context):
@@ -45,13 +36,39 @@ class BasicCommands(commands.Cog):
 
         embed = discord.Embed(
             title="Bot 資訊",
-            description="這是 Carbarcha bot",
+            description="這是拉芙塔莉雅",
             color=discord.Color.blue()
         )
         embed.add_field(name="Bot 名稱", value=self.bot.user.name, inline=True)
         embed.add_field(name="伺服器數量", value=len(self.bot.guilds), inline=True)
 
         await ctx.send(embed=embed)
+
+    @commands.command(name="找工作")
+    async def job_search(self, ctx: commands.Context, *, message: str):
+        """
+        使用 LLM 搜尋 104 工作。
+
+        使用方式: /找工作 <你的需求>
+        範例: /找工作 我想找台北市的 Python 工程師工作，薪水至少 5 萬
+        """
+        # 發送處理中訊息
+        processing_msg = await ctx.send("🔍 正在搜尋工作中...")
+
+        try:
+            # 呼叫 LLM 工作搜尋
+            result = chat_with_job_search(user_message=message)
+
+            # 取得最終回應
+            final_response = result.get("final_response", "抱歉，沒有找到相關工作。")
+
+            # 編輯處理中訊息為最終結果
+            await processing_msg.edit(content=final_response)
+
+        except Exception as e:
+            # 錯誤處理
+            await processing_msg.edit(content=f"❌ 搜尋時發生錯誤：{str(e)}")
+            print(f"找工作指令錯誤: {e}")
 
 
 async def setup(bot: commands.Bot):

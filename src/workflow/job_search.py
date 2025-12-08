@@ -108,6 +108,12 @@ def chat_with_job_search(
                 "name": tool_call["name"],
                 "content": formatted_result,
             })
+    
+    # 指導 LLM 生成最終回應
+    messages.append({
+        "role": "system",
+        "content": "",
+    })
 
     # 第二次呼叫 LLM，讓它根據工具結果生成回應
     print("🤖 生成最終回應中...")
@@ -120,80 +126,3 @@ def chat_with_job_search(
     result["final_response"] = final_response["choices"][0]["message"]["content"]
 
     return result
-
-
-def main():
-    """
-    主程式：示範如何使用 LLM 進行工作搜尋。
-
-    注意：需要在 .env 文件中設定 LLM_API_KEY 和 LLM_API_URL
-    """
-    from config import config
-
-    print("=" * 60)
-    print("LLM 工作搜尋助手")
-    print("=" * 60)
-    print()
-
-    # 檢查配置是否正確
-    try:
-        config.validate()
-    except ValueError as e:
-        print(f"⚠️  配置錯誤：{e}")
-        print()
-        print("使用方式：")
-        print("1. 複製 .env_example 為 .env")
-        print("2. 在 .env 中設定你的 API 金鑰和端點")
-        print("3. 重新執行程式")
-        print()
-        return
-
-    print(f"✓ 使用模型：{config.LLM_MODEL}")
-    print(f"✓ API URL：{config.LLM_API_URL}")
-    print()
-
-    # 示範對話
-    example_queries = [
-        "我想找台北市的 Python 工程師工作，薪水至少 5 萬",
-        "幫我找新北市的前端工程師，要大學以上學歷，一週內發布的職缺",
-        "搜尋台北和新北的數據分析師工作，薪資 6-8 萬",
-    ]
-
-    for i, query in enumerate(example_queries, 1):
-        print(f"\n{'=' * 60}")
-        print(f"範例 {i}")
-        print(f"{'=' * 60}")
-        print(f"👤 用戶：{query}")
-        print()
-
-        try:
-            # 使用 .env 中的預設設定
-            result = chat_with_job_search(user_message=query)
-
-            # 顯示工具呼叫記錄
-            if result["has_tool_call"]:
-                print("📝 工具呼叫記錄：")
-                for idx, tool_call in enumerate(result["tool_calls"], 1):
-                    print(f"   {idx}. {tool_call['tool_name']}")
-                    print(f"      參數：{json.dumps(tool_call['parameters'], ensure_ascii=False, indent=6)}")
-                print()
-
-                print("📊 查詢結果摘要：")
-                for idx, search_result in enumerate(result["search_results"], 1):
-                    data = search_result.get("data", {})
-                    total = data.get("totalCount", 0)
-                    jobs_count = len(data.get("list", []))
-                    print(f"   {idx}. 找到 {total:,} 筆工作，返回 {jobs_count} 筆")
-                print()
-
-            # 顯示最終回應
-            print(f"🤖 助手：{result['final_response']}")
-
-        except Exception as e:
-            print(f"❌ 錯誤：{e}")
-
-        print()
-
-
-if __name__ == "__main__":
-    main()
