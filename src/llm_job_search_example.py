@@ -1,7 +1,7 @@
 """LLM Job Search Integration Example."""
 
 import json
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any
 from llm_client import call_llm, extract_tool_calls
 from job_search_tool import (
     JOB_SEARCH_TOOL,
@@ -11,19 +11,13 @@ from job_search_tool import (
 
 
 def chat_with_job_search(
-    user_message: str,
-    api_key: Optional[str] = None,
-    api_url: Optional[str] = None,
-    model: Optional[str] = None,
+    user_message: str
 ) -> Dict[str, Any]:
     """
     使用 LLM 進行工作搜尋對話。
 
     Args:
         user_message: 用戶的訊息
-        api_key: LLM API 金鑰（預設從 .env 讀取）
-        api_url: LLM API 端點（預設從 .env 讀取）
-        model: 模型名稱（預設從 .env 讀取）
 
     Returns:
         包含完整記錄的字典：
@@ -72,9 +66,6 @@ def chat_with_job_search(
     llm_response = call_llm(
         messages=messages,
         tools=tools,
-        api_key=api_key,
-        api_url=api_url,
-        model=model,
     )
 
     # 檢查是否有工具呼叫
@@ -123,9 +114,6 @@ def chat_with_job_search(
     final_response = call_llm(
         messages=messages,
         tools=tools,
-        api_key=api_key,
-        api_url=api_url,
-        model=model,
     )
 
     # 記錄最終回應

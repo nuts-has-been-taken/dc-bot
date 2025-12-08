@@ -9,9 +9,9 @@ from config import config
 def call_llm(
     messages: List[Dict[str, str]],
     tools: Optional[List[Dict[str, Any]]] = None,
-    api_key: Optional[str] = None,
-    api_url: Optional[str] = None,
-    model: Optional[str] = None,
+    api_key: Optional[str] = config.LLM_API_KEY,
+    api_url: Optional[str] = config.LLM_API_URL,
+    model: Optional[str] = config.LLM_MODEL or "gpt-5",
     temperature: Optional[float] = None,
     max_tokens: Optional[int] = None,
     top_p: Optional[float] = None,
@@ -40,11 +40,6 @@ def call_llm(
         ValueError: 當 API key 或 URL 未提供時
         requests.RequestException: 當 API 請求失敗時
     """
-    # 從 config 獲取預設值
-    api_key = api_key or config.LLM_API_KEY
-    api_url = api_url or config.LLM_API_URL
-    model = model or config.LLM_MODEL
-
     if not api_key:
         raise ValueError(
             "API key is required. Please set LLM_API_KEY in .env file or pass it as a parameter."

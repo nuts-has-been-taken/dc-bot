@@ -2,7 +2,6 @@
 
 from typing import Dict, Any, Optional
 from job104 import search_104_jobs
-from mappings import AREA_MAP, JOB_TYPE_MAP
 
 
 # 工具定義（OpenAI function calling 格式）
