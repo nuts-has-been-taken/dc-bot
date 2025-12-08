@@ -1,7 +1,7 @@
 """Job Search Tool for LLM."""
 
 from typing import Dict, Any, Optional
-from job104 import search_104_jobs
+from ..core.job104 import search_104_jobs
 
 
 # 工具定義（OpenAI function calling 格式）

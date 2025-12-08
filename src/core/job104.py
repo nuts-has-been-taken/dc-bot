@@ -3,7 +3,7 @@
 import requests
 from typing import Optional, Union, List, Dict, Any
 
-from mappings import (
+from .mappings import (
     AREA_MAP,
     WORK_PERIOD_MAP,
     ROTATION_MAP,

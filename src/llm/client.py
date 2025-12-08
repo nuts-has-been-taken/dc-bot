@@ -3,7 +3,7 @@
 import json
 import requests
 from typing import Dict, Any, List, Optional
-from config import config
+from ..config import config
 
 
 def call_llm(

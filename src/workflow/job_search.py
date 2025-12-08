@@ -2,8 +2,8 @@
 
 import json
 from typing import Dict, Any
-from llm_client import call_llm, extract_tool_calls
-from job_search_tool import (
+from ..llm.client import call_llm, extract_tool_calls
+from ..llm.tools import (
     JOB_SEARCH_TOOL,
     execute_job_search_tool,
     format_job_search_results,
