@@ -3,6 +3,7 @@
 import json
 import requests
 from typing import Dict, Any, List, Optional
+from config import config
 
 
 def call_llm(
@@ -10,8 +11,12 @@ def call_llm(
     tools: Optional[List[Dict[str, Any]]] = None,
     api_key: Optional[str] = None,
     api_url: Optional[str] = None,
-    model: str = "gpt-4",
-    temperature: float = 0.7,
+    model: Optional[str] = None,
+    temperature: Optional[float] = None,
+    max_tokens: Optional[int] = None,
+    top_p: Optional[float] = None,
+    presence_penalty: Optional[float] = None,
+    stream: bool = False,
 ) -> Dict[str, Any]:
     """
     呼叫 LLM API（支援 OpenAI 格式）。
@@ -19,10 +24,14 @@ def call_llm(
     Args:
         messages: 對話訊息列表
         tools: 工具定義列表（OpenAI function calling 格式）
-        api_key: API 金鑰
-        api_url: API 端點 URL
-        model: 模型名稱
-        temperature: 溫度參數
+        api_key: API 金鑰（預設從環境變數讀取）
+        api_url: API 端點 URL（預設從環境變數讀取）
+        model: 模型名稱（預設從環境變數讀取）
+        temperature: 溫度參數（0.0-2.0）
+        max_tokens: 最大 token 數量
+        top_p: Top-p 採樣參數
+        presence_penalty: Presence penalty 參數
+        stream: 是否使用串流模式（預設 False）
 
     Returns:
         LLM 回應的字典
@@ -31,10 +40,19 @@ def call_llm(
         ValueError: 當 API key 或 URL 未提供時
         requests.RequestException: 當 API 請求失敗時
     """
+    # 從 config 獲取預設值
+    api_key = api_key or config.LLM_API_KEY
+    api_url = api_url or config.LLM_API_URL
+    model = model or config.LLM_MODEL
+
     if not api_key:
-        raise ValueError("API key is required")
+        raise ValueError(
+            "API key is required. Please set LLM_API_KEY in .env file or pass it as a parameter."
+        )
     if not api_url:
-        raise ValueError("API URL is required")
+        raise ValueError(
+            "API URL is required. Please set LLM_API_URL in .env file or pass it as a parameter."
+        )
 
     headers = {
         "Content-Type": "application/json",
@@ -44,8 +62,18 @@ def call_llm(
     payload = {
         "model": model,
         "messages": messages,
-        "temperature": temperature,
+        "stream": stream,
     }
+
+    # 添加可選參數
+    if temperature is not None:
+        payload["temperature"] = temperature
+    if max_tokens is not None:
+        payload["max_tokens"] = max_tokens
+    if top_p is not None:
+        payload["top_p"] = top_p
+    if presence_penalty is not None:
+        payload["presence_penalty"] = presence_penalty
 
     # 如果提供了工具定義，加入到請求中
     if tools:

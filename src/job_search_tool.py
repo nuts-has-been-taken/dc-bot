@@ -1,6 +1,6 @@
 """Job Search Tool for LLM."""
 
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional
 from job104 import search_104_jobs
 
 
@@ -37,7 +37,7 @@ JOB_SEARCH_TOOL = {
                 },
                 "posted_within_days": {
                     "type": "integer",
-                    "description": "發布天數內。選項：0（本日）、3（三日內）、7（一週內）、14（兩週內）、30（一個月內）",
+                    "description": "發布天數內的工作。例如：7 表示過去 7 天內發布的工作",
                 },
                 "sort_by": {
                     "type": "string",
