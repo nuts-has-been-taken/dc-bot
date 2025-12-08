@@ -12,6 +12,7 @@ from mappings import (
     COMPANY_TYPE_MAP,
     WELFARE_MAP,
     SORT_BY_MAP,
+    JOB_TYPE_MAP,
 )
 
 
@@ -87,10 +88,11 @@ def search_104_jobs(
         area_codes = [AREA_MAP.get(a, a) for a in areas]
         params["area"] = ",".join(area_codes)
 
-    # 職位類別（這裡先保留原始值，因為需要後續 mapping）
+    # 職位類別
     if job_category:
         categories = [job_category] if isinstance(job_category, str) else job_category
-        params["jobcat"] = ",".join(categories)
+        category_codes = [JOB_TYPE_MAP.get(c, c) for c in categories]
+        params["jobcat"] = ",".join(category_codes)
 
     # 薪資範圍
     if salary_min is not None:
