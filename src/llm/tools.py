@@ -183,7 +183,7 @@ def execute_job_search_tool(tool_params: Dict[str, Any]) -> Dict[str, Any]:
         raise Exception(f"Failed to execute job search: {e}")
 
 
-def format_job_search_results(result: Dict[str, Any], max_jobs: int = 30) -> str:
+def format_job_search_results(result: Dict[str, Any], max_jobs: int = 50) -> str:
     """
     格式化工作搜尋結果為易讀的文字。
 

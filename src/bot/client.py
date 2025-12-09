@@ -28,7 +28,14 @@ class DiscordBot(commands.Bot):
 
     async def setup_hook(self):
         """Bot 設定 Hook，在 Bot 啟動前執行。"""
-        print(f"正在設定 {self.user.name} Bot...")
+        # 注意：指令模組會在 bot.py 中載入
+        # 這裡只負責同步斜線指令到 Discord
+        print("正在同步斜線指令到 Discord...")
+        try:
+            synced = await self.tree.sync()
+            print(f"✅ 成功同步 {len(synced)} 個斜線指令")
+        except Exception as e:
+            print(f"❌ 同步斜線指令時發生錯誤: {e}")
 
     async def on_ready(self):
         """當 Bot 成功連接到 Discord 時觸發。"""

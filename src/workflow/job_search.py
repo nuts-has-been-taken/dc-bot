@@ -1,6 +1,7 @@
 """LLM Job Search Integration Example."""
 
 import json
+import time
 from typing import Dict, Any
 from ..llm.client import call_llm, extract_tool_calls
 from ..llm.tools import (
@@ -8,6 +9,7 @@ from ..llm.tools import (
     execute_job_search_tool,
     format_job_search_results,
 )
+from .prompt import JOB_SEARCH_FINAL_RESPONSE_PROMPT
 
 
 def chat_with_job_search(
@@ -50,7 +52,7 @@ def chat_with_job_search(
     messages = [
         {
             "role": "system",
-            "content": "你是一個專業的求職助手，幫助用戶在 104 人力銀行搜尋工作機會。當用戶描述他們想找的工作時，請使用 search_104_jobs 工具來搜尋，並將結果整理後回覆給用戶。",
+            "content": "你是一個專業的求職助手，幫助用戶在 104 人力銀行搜尋工作機會。當用戶描述他們想找的工作時，請使用 search_104_jobs 工具來搜尋",
         },
         {
             "role": "user",
@@ -63,10 +65,20 @@ def chat_with_job_search(
 
     # 第一次呼叫 LLM
     print("🤖 呼叫 LLM 中...")
+    start_time = time.time()
     llm_response = call_llm(
         messages=messages,
         tools=tools,
     )
+    llm_time = time.time() - start_time
+
+    # 顯示第一次 LLM 呼叫的時間和 token 使用量
+    print(f"⏱️  第一次 LLM 呼叫耗時: {llm_time:.2f} 秒")
+    if "usage" in llm_response:
+        usage = llm_response["usage"]
+        print(f"📊 Token 使用量: {usage.get('total_tokens', 0)} tokens "
+              f"(prompt: {usage.get('prompt_tokens', 0)}, "
+              f"completion: {usage.get('completion_tokens', 0)})")
 
     # 檢查是否有工具呼叫
     tool_calls = extract_tool_calls(llm_response)
@@ -92,7 +104,11 @@ def chat_with_job_search(
             result["tool_calls"].append(tool_call_record)
 
             # 執行工作搜尋
+            print("🕷️  執行 104 工作搜尋...")
+            crawler_start_time = time.time()
             search_result = execute_job_search_tool(tool_call["arguments"])
+            crawler_time = time.time() - crawler_start_time
+            print(f"⏱️  爬蟲執行耗時: {crawler_time:.2f} 秒")
 
             # 記錄查詢結果
             result["search_results"].append(search_result)
@@ -112,15 +128,24 @@ def chat_with_job_search(
     # 指導 LLM 生成最終回應
     messages.append({
         "role": "system",
-        "content": "",
+        "content": JOB_SEARCH_FINAL_RESPONSE_PROMPT,
     })
 
     # 第二次呼叫 LLM，讓它根據工具結果生成回應
     print("🤖 生成最終回應中...")
+    final_start_time = time.time()
     final_response = call_llm(
         messages=messages,
-        tools=tools,
     )
+    final_llm_time = time.time() - final_start_time
+
+    # 顯示第二次 LLM 呼叫的時間和 token 使用量
+    print(f"⏱️  最終回應生成耗時: {final_llm_time:.2f} 秒")
+    if "usage" in final_response:
+        usage = final_response["usage"]
+        print(f"📊 Token 使用量: {usage.get('total_tokens', 0)} tokens "
+              f"(prompt: {usage.get('prompt_tokens', 0)}, "
+              f"completion: {usage.get('completion_tokens', 0)})")
 
     # 記錄最終回應
     result["final_response"] = final_response["choices"][0]["message"]["content"]

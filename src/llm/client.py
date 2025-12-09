@@ -80,7 +80,7 @@ def call_llm(
             api_url,
             headers=headers,
             json=payload,
-            timeout=30,
+            timeout=60,
         )
         response.raise_for_status()
         return response.json()
