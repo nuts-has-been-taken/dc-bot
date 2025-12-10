@@ -1,7 +1,7 @@
 """LLM Client Module."""
 
 import json
-import requests
+from openai import OpenAI
 from typing import Dict, Any, List, Optional
 from ..config import config
 
@@ -10,16 +10,17 @@ def call_llm(
     messages: List[Dict[str, str]],
     tools: Optional[List[Dict[str, Any]]] = None,
     api_key: Optional[str] = config.LLM_API_KEY,
-    api_url: Optional[str] = config.LLM_API_URL,
+    api_url: Optional[str] = config.LLM_API_URL or None,
     model: Optional[str] = config.LLM_MODEL or "gpt-5",
     temperature: Optional[float] = None,
     max_tokens: Optional[int] = None,
     top_p: Optional[float] = None,
     presence_penalty: Optional[float] = None,
     stream: bool = False,
+    reasoning: bool = False,
 ) -> Dict[str, Any]:
     """
-    呼叫 LLM API（支援 OpenAI 格式）。
+    呼叫 LLM API（使用 OpenAI SDK）。
 
     Args:
         messages: 對話訊息列表
@@ -38,23 +39,21 @@ def call_llm(
 
     Raises:
         ValueError: 當 API key 或 URL 未提供時
-        requests.RequestException: 當 API 請求失敗時
+        Exception: 當 API 請求失敗時
     """
     if not api_key:
         raise ValueError(
             "API key is required. Please set LLM_API_KEY in .env file or pass it as a parameter."
         )
-    if not api_url:
-        raise ValueError(
-            "API URL is required. Please set LLM_API_URL in .env file or pass it as a parameter."
-        )
 
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_key}",
-    }
+    # 建立 OpenAI 客戶端
+    client = OpenAI(
+        api_key=api_key,
+        base_url=api_url,
+    )
 
-    payload = {
+    # 準備請求參數
+    kwargs = {
         "model": model,
         "messages": messages,
         "stream": stream,
@@ -62,29 +61,25 @@ def call_llm(
 
     # 添加可選參數
     if temperature is not None:
-        payload["temperature"] = temperature
+        kwargs["temperature"] = temperature
     if max_tokens is not None:
-        payload["max_tokens"] = max_tokens
+        kwargs["max_tokens"] = max_tokens
     if top_p is not None:
-        payload["top_p"] = top_p
+        kwargs["top_p"] = top_p
     if presence_penalty is not None:
-        payload["presence_penalty"] = presence_penalty
+        kwargs["presence_penalty"] = presence_penalty
 
     # 如果提供了工具定義，加入到請求中
     if tools:
-        payload["tools"] = tools
-        payload["tool_choice"] = "auto"
+        kwargs["tools"] = tools
 
     try:
-        response = requests.post(
-            api_url,
-            headers=headers,
-            json=payload,
-            timeout=60,
-        )
-        response.raise_for_status()
-        return response.json()
-    except requests.RequestException as e:
+        # 使用 OpenAI SDK 呼叫 API
+        response = client.chat.completions.create(**kwargs)
+
+        # 將 Pydantic 模型轉換為字典以保持向後兼容
+        return response.model_dump()
+    except Exception as e:
         raise Exception(f"Failed to call LLM API: {e}")
 
 

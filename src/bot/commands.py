@@ -38,22 +38,22 @@ class BasicCommands(commands.Cog):
 
         await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="找工作", description="使用 LLM 搜尋 104 工作")
-    @app_commands.describe(需求="請描述你的工作需求，例如：台北市的 Python 工程師，薪水至少 5 萬")
-    async def job_search(self, interaction: discord.Interaction, 需求: str):
+    @app_commands.command(name="找工作", description="使用 AI 搜尋 104 工作")
+    @app_commands.describe(輸入="範例：我想找文山的 Python 工程師工作，薪水至少5萬")
+    async def job_search(self, interaction: discord.Interaction, 輸入: str):
         """
-        使用 LLM 搜尋 104 工作斜線指令。
+        使用 AI 搜尋 104 工作斜線指令。
 
         Args:
             interaction: Discord 互動物件
-            需求: 使用者的工作需求描述
+            輸入: 使用者的工作需求描述
         """
         # 先回應，避免超時（Discord 要求 3 秒內回應）
         await interaction.response.send_message("🔍 正在搜尋工作中...")
 
         try:
             # 呼叫 LLM 工作搜尋
-            result = chat_with_job_search(user_message=需求)
+            result = chat_with_job_search(user_message=輸入)
 
             # 取得最終回應
             final_response = result.get("final_response", "抱歉，沒有找到相關工作。")

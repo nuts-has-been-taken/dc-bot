@@ -183,7 +183,7 @@ def execute_job_search_tool(tool_params: Dict[str, Any]) -> Dict[str, Any]:
         raise Exception(f"Failed to execute job search: {e}")
 
 
-def format_job_search_results(result: Dict[str, Any], max_jobs: int = 50) -> str:
+def format_job_search_results(result: Dict[str, Any], max_jobs: int = 100) -> str:
     """
     格式化工作搜尋結果為易讀的文字。
 
@@ -214,6 +214,8 @@ def format_job_search_results(result: Dict[str, Any], max_jobs: int = 50) -> str
         lines.append(f"   公司：{job.get('custName', 'N/A')}")
         lines.append(f"   地區：{job.get('jobAddrNoDesc', 'N/A')}")
         lines.append(f"   薪資：{job.get('salaryDesc', 'N/A')}")
+        lines.append(f"   學歷：{job.get('optionEdu', 'N/A')}")
+        lines.append(f"   經歷：{job.get('expDesc', 'N/A')}")
         lines.append(f"   更新：{job.get('appearDateDesc', 'N/A')}")
         lines.append(f"   連結：https://www.104.com.tw/job/{job.get('jobNo', '')}")
         lines.append("")
