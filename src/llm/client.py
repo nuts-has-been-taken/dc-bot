@@ -4,6 +4,7 @@ import json
 from openai import OpenAI
 from typing import Dict, Any, List, Optional
 from ..config import config
+from .prompt.raphtalia import RAPHTALIA_PROMPT
 
 
 def call_llm(
@@ -17,7 +18,6 @@ def call_llm(
     top_p: Optional[float] = None,
     presence_penalty: Optional[float] = None,
     stream: bool = False,
-    reasoning: bool = False,
 ) -> Dict[str, Any]:
     """
     呼叫 LLM API（使用 OpenAI SDK）。
@@ -51,6 +51,9 @@ def call_llm(
         api_key=api_key,
         base_url=api_url,
     )
+
+    # Add Raphtalia prompt
+    messages = [{"role": "system", "content": RAPHTALIA_PROMPT}] + messages
 
     # 準備請求參數
     kwargs = {

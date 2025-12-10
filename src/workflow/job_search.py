@@ -116,7 +116,7 @@ def chat_with_job_search(
 
     # 提取 LLM 回應內容
     response_text = llm_response["choices"][0]["message"]["content"]
-    print(f"📝 LLM 回應：{response_text[:200]}...")
+    print(f"📝 LLM 回應：{response_text}")
 
     # 解析 JSON
     parsed_json = extract_json_from_text(response_text)
@@ -126,8 +126,6 @@ def chat_with_job_search(
         print("⚠️  無法解析 JSON，直接返回 LLM 回應")
         result["final_response"] = response_text
         return result
-
-    print(f"✅ 成功解析 JSON：{json.dumps(parsed_json, ensure_ascii=False)}")
 
     # 檢查是否需要搜尋
     need_search = parsed_json.get("need_search", False)
@@ -141,8 +139,6 @@ def chat_with_job_search(
     # 需要搜尋，提取參數
     search_params = parsed_json.get("params", {})
     result["search_params"] = search_params
-
-    print(f"🔍 搜尋參數：{json.dumps(search_params, ensure_ascii=False, indent=2)}")
 
     # 執行工作搜尋
     print("🕷️  執行 104 工作搜尋...")

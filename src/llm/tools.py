@@ -1,7 +1,8 @@
 """Job Search Tool for LLM."""
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from ..core.job104 import search_104_jobs
+from ..core.mappings import AREA_MAP, JOB_TYPE_MAP, EDUCATION_MAP, SORT_BY_MAP
 
 
 # 工具定義（OpenAI function calling 格式）
@@ -73,6 +74,79 @@ JOB_SEARCH_TOOL = {
 }
 
 
+def convert_areas_to_codes(areas: List[str]) -> List[str]:
+    """
+    將地區名稱列表轉換為地區代碼列表。
+
+    Args:
+        areas: 地區名稱列表（如：["台北市", "新北市"]）
+
+    Returns:
+        地區代碼列表（如：["6001001000", "6001002000"]）
+    """
+    codes = []
+    for area in areas:
+        if area in AREA_MAP:
+            codes.append(AREA_MAP[area])
+        else:
+            # 如果找不到對應代碼，記錄警告但繼續執行
+            print(f"Warning: Area '{area}' not found in AREA_MAP, skipping...")
+    return codes
+
+
+def convert_job_categories_to_codes(categories: List[str]) -> List[str]:
+    """
+    將職位類別名稱列表轉換為職位類別代碼列表。
+
+    Args:
+        categories: 職位類別名稱列表（如：["軟體／工程類人員"]）
+
+    Returns:
+        職位類別代碼列表（如：["2007001000"]）
+    """
+    codes = []
+    for category in categories:
+        if category in JOB_TYPE_MAP:
+            codes.append(JOB_TYPE_MAP[category])
+        else:
+            print(f"Warning: Job category '{category}' not found in JOB_TYPE_MAP, skipping...")
+    return codes
+
+
+def convert_education_to_code(education: str) -> Optional[str]:
+    """
+    將學歷名稱轉換為學歷代碼。
+
+    Args:
+        education: 學歷名稱（如："大學"）
+
+    Returns:
+        學歷代碼（如："4"），如果找不到則返回 None
+    """
+    if education in EDUCATION_MAP:
+        return EDUCATION_MAP[education]
+    else:
+        print(f"Warning: Education '{education}' not found in EDUCATION_MAP")
+        return None
+
+
+def convert_sort_by_to_code(sort_by: str) -> Optional[str]:
+    """
+    將排序方式名稱轉換為排序代碼。
+
+    Args:
+        sort_by: 排序方式名稱（如："符合度"）
+
+    Returns:
+        排序代碼（如："1"），如果找不到則返回 None
+    """
+    if sort_by in SORT_BY_MAP:
+        return SORT_BY_MAP[sort_by]
+    else:
+        print(f"Warning: Sort by '{sort_by}' not found in SORT_BY_MAP")
+        return None
+
+
 def parse_salary_range(salary_range: str) -> Dict[str, Optional[int]]:
     """
     解析薪資範圍字串。
@@ -120,6 +194,7 @@ def parse_salary_range(salary_range: str) -> Dict[str, Optional[int]]:
 def convert_tool_params_to_search_params(tool_params: Dict[str, Any]) -> Dict[str, Any]:
     """
     將簡化的工具參數轉換為完整的搜尋參數。
+    會將文字參數（地區、職位類別、學歷、排序方式）轉換為對應的代碼。
 
     Args:
         tool_params: 從 LLM 工具呼叫中獲得的參數
@@ -129,26 +204,35 @@ def convert_tool_params_to_search_params(tool_params: Dict[str, Any]) -> Dict[st
     """
     search_params = {}
 
-    # 直接傳遞的參數
+    # 直接傳遞的參數（不需要轉換）
     if "keyword" in tool_params:
         search_params["keyword"] = tool_params["keyword"]
-
-    if "area" in tool_params:
-        search_params["area"] = tool_params["area"]
-
-    if "job_category" in tool_params:
-        search_params["job_category"] = tool_params["job_category"]
-
-    if "education" in tool_params:
-        search_params["education"] = tool_params["education"]
 
     if "posted_within_days" in tool_params:
         search_params["posted_within_days"] = tool_params["posted_within_days"]
 
-    if "sort_by" in tool_params:
-        search_params["sort_by"] = tool_params["sort_by"]
+    # 需要轉換為代碼的參數
+    if "area" in tool_params:
+        area_codes = convert_areas_to_codes(tool_params["area"])
+        if area_codes:
+            search_params["area"] = area_codes
 
-    # 需要轉換的參數
+    if "job_category" in tool_params:
+        category_codes = convert_job_categories_to_codes(tool_params["job_category"])
+        if category_codes:
+            search_params["job_category"] = category_codes
+
+    if "education" in tool_params:
+        education_code = convert_education_to_code(tool_params["education"])
+        if education_code:
+            search_params["education"] = education_code
+
+    if "sort_by" in tool_params:
+        sort_code = convert_sort_by_to_code(tool_params["sort_by"])
+        if sort_code:
+            search_params["sort_by"] = sort_code
+
+    # 薪資範圍參數轉換
     if "salary_range" in tool_params:
         salary_info = parse_salary_range(tool_params["salary_range"])
         if salary_info["salary_min"] is not None:
@@ -209,15 +293,16 @@ def format_job_search_results(result: Dict[str, Any], max_jobs: int = 100) -> st
 
     lines = [f"找到 {total:,} 筆工作，以下是前 {len(jobs_to_show)} 筆：\n"]
 
-    for i, job in enumerate(jobs_to_show, 1):
+    for i, job in enumerate(jobs_to_show, 0):
         lines.append(f"{i}. {job.get('jobName', 'N/A')}")
         lines.append(f"   公司：{job.get('custName', 'N/A')}")
         lines.append(f"   地區：{job.get('jobAddrNoDesc', 'N/A')}")
         lines.append(f"   薪資：{job.get('salaryDesc', 'N/A')}")
         lines.append(f"   學歷：{job.get('optionEdu', 'N/A')}")
-        lines.append(f"   經歷：{job.get('expDesc', 'N/A')}")
+        lines.append(f"   經歷：{job.get('periodDesc', 'N/A')}")
         lines.append(f"   更新：{job.get('appearDateDesc', 'N/A')}")
         lines.append(f"   連結：https://www.104.com.tw/job/{job.get('jobNo', '')}")
+        lines.append(f"   介紹：{job.get('description', 'N/A')[:100]}...")
         lines.append("")
 
     return "\n".join(lines)
