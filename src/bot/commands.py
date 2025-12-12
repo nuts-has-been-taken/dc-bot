@@ -25,6 +25,12 @@ class BasicCommands(commands.Cog):
         await interaction.response.send_message(
             f"你好，{interaction.user.mention}！👋"
         )
+        
+    @app_commands.command(name="dean", description="dean")
+    async def dean(self, interaction: discord.Interaction):
+        await interaction.response.send_message(
+            "媽 dean，閉嘴"
+        )
 
     @app_commands.command(name="info", description="顯示 Bot 資訊")
     async def info(self, interaction: discord.Interaction):
