@@ -83,8 +83,8 @@ class BasicCommands(commands.Cog):
         await interaction.response.send_message("🔍 正在分析職缺中，請耐心等候...")
 
         try:
-            # 呼叫 LLM 職缺分析
-            result = analyze_job_detail(job_query=查詢)
+            # 呼叫 LLM 職缺分析（異步）
+            result = await analyze_job_detail(job_query=查詢)
 
             # 取得分析報告
             analysis_report = result.get("analysis_report", "抱歉，無法完成分析。")
