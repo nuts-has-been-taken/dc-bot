@@ -62,15 +62,20 @@ COPY --chown=botuser:botuser pyproject.toml uv.lock ./
 COPY --chown=botuser:botuser bot.py ./
 COPY --chown=botuser:botuser src ./src
 
-# Switch to non-root user
-USER botuser
-
-# Install Playwright browsers using uv
-RUN uv run playwright install chromium
-
-# Set environment variables
+# Set environment variables (before installing Playwright)
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
+ENV PLAYWRIGHT_BROWSERS_PATH=/app/ms-playwright
+
+# Create Playwright browsers directory and set ownership
+RUN mkdir -p /app/ms-playwright && chown -R botuser:botuser /app/ms-playwright
+
+# Install Playwright browsers in custom location
+# Using --with-deps to ensure all system dependencies are installed
+RUN uv run playwright install --with-deps chromium
+
+# Switch to non-root user
+USER botuser
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
