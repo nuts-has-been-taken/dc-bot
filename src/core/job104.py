@@ -64,7 +64,7 @@ def search_104_jobs(
         requests.RequestException: 當 API 請求失敗時
     """
     # API endpoint
-    url = "https://www.104.com.tw/jobs/search/list"
+    url = "https://www.104.com.tw/jobs/search/api/jobs"
 
     # 設置 headers
     headers = {
@@ -81,6 +81,11 @@ def search_104_jobs(
     params["page"] = page
     if keyword_in_job_title_only:
         params["kwop"] = "1"
+
+    params["expansionType"] = "area,spec,com,job,wf,wktm"
+    params["ro"] = "0"
+    params["pagesize"] = "20"
+    params["mode"] = "s"
 
     # 地區
     if area:
@@ -104,7 +109,6 @@ def search_104_jobs(
     if work_period:
         periods = [work_period] if isinstance(work_period, str) else work_period
         period_codes = [WORK_PERIOD_MAP.get(p, p) for p in periods]
-        # 需要將多個值相加（因為是 bitmask）
         if period_codes:
             total = sum(int(code) for code in period_codes)
             params["s9"] = str(total)
@@ -148,8 +152,12 @@ def search_104_jobs(
 
     # 發送請求
     try:
-        response = requests.get(url, headers=headers, params=params, timeout=10)
-        response.raise_for_status()
-        return response.json()
+        result = []
+        for page_num in range(page, 6):
+            params["page"] = page_num
+            response = requests.get(url, headers=headers, params=params, timeout=10)
+            response.raise_for_status()
+            result.extend(response.json().get("data", []))
+        return result
     except requests.RequestException as e:
         raise Exception(f"Failed to fetch job data from 104: {e}")
