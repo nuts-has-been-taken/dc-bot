@@ -12,8 +12,8 @@ WORKDIR /app
 # Copy dependency files
 COPY pyproject.toml uv.lock ./
 
-# Install dependencies using uv sync
-RUN uv sync --frozen --no-dev
+# Install dependencies using uv sync (no project install needed for apps)
+RUN uv sync --frozen --no-install-project
 
 # ==========================================
 # Stage 2: Runtime - Final minimal image
