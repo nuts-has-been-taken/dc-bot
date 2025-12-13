@@ -193,125 +193,172 @@ def is_dynamic_website(url: str) -> bool:
 
 async def extract_104_dynamic_content(page: Page) -> str:
     """
-    使用 Playwright 提取 104 職缺頁面的內容。
+    使用 Playwright 提取 104 職缺頁面的結構化內容。
+
+    此函數會提取完整的職位資訊，包括：
+    - 基本資訊：職位、公司、更新日期
+    - 工作內容：完整的工作描述和要求
+    - 職務類別
+    - 工作條件：待遇、性質、地點、時段等
+    - 條件要求：學歷、經歷、技能、工具等
+    - 福利制度
+    - 聯絡方式
 
     Args:
         page: Playwright Page 物件
 
     Returns:
-        提取的職缺資訊
+        格式化的職缺資訊字串
     """
-    info_parts = []
-
     try:
-        # 等待頁面關鍵元素載入
-        # 104 網站通常會有 job-header 或類似的容器
+        # 等待頁面完全載入
         await page.wait_for_selector('body', timeout=15000)
+        await page.wait_for_timeout(3000)
 
-        # 給予額外時間讓 JavaScript 渲染內容
-        await page.wait_for_timeout(2000)
+        # 獲取整個頁面的文本內容
+        body_text = await page.locator('body').inner_text()
+        lines = [line.strip() for line in body_text.split('\n') if line.strip()]
 
-        # 提取職位標題 - 嘗試多個選擇器
-        title_selectors = [
-            'h1',
-            '[data-qa="job-title"]',
-            '.job-header__title',
-            '.job__title'
-        ]
-        for selector in title_selectors:
-            try:
-                title = page.locator(selector).first
-                if await title.count() > 0:
-                    title_text = await title.inner_text()
-                    if title_text:
-                        info_parts.append(f"職位：{title_text.strip()}")
+        # 嘗試從行中找到職位和公司
+        title = None
+        company = None
+
+        # 提取 h1 標題作為職位
+        try:
+            h1 = await page.locator('h1').first.inner_text()
+            if h1 and len(h1) < 100:  # 確保是合理的職位名稱
+                title = h1.strip()
+        except Exception:
+            pass
+
+        # 如果沒找到 h1，從文本中推斷
+        if not title:
+            for i, line in enumerate(lines):
+                if '公司' in line and i > 0:
+                    # 上一行可能是職位
+                    potential_title = lines[i-1]
+                    if len(potential_title) < 50 and not any(x in potential_title for x in ['工作', '登入', 'APP', '職涯']):
+                        title = potential_title
                         break
-            except:
+
+        # 查找公司名稱（通常在開頭部分）
+        for i, line in enumerate(lines[:30]):
+            if '股份有限公司' in line or '有限公司' in line:
+                if len(line) < 50:  # 確保是公司名稱而不是地址
+                    company = line
+                    break
+
+        # 構建結構化資訊
+        structured_info = []
+
+        if title:
+            structured_info.append(f"【職位名稱】\n{title}\n")
+
+        if company:
+            structured_info.append(f"【公司名稱】\n{company}\n")
+
+        # 提取各個關鍵section
+        sections_to_extract = {
+            '工作內容': ('工作內容', '職務類別'),
+            '職務類別': ('職務類別', '工作待遇'),
+            '工作待遇': ('工作待遇', '工作性質'),
+            '工作條件': ('工作性質', '條件要求'),
+            '條件要求': ('條件要求', '公司環境照片'),
+            '福利制度': ('福利制度', '聯絡方式'),
+            '聯絡方式': ('聯絡方式', '104人力銀行提醒您'),
+        }
+
+        for section_name, (start_marker, end_marker) in sections_to_extract.items():
+            section_content = extract_section(lines, start_marker, end_marker)
+            if section_content:
+                structured_info.append(f"【{section_name}】\n{section_content}\n")
+
+        # 如果成功提取了結構化資訊，返回
+        if len(structured_info) > 2:  # 至少有標題、公司和一個section
+            result = "\n".join(structured_info)
+            print(f"✅ 成功提取結構化內容（{len(result)} 字元）")
+            return result
+
+        # 如果結構化提取失敗，返回處理過的完整文本
+        print("⚠️  結構化提取不完整，使用完整文本")
+        # 清理文本：移除導航、頁尾等無關內容
+        cleaned_lines = []
+        skip_patterns = ['登入', '註冊', '104人力銀行', 'APP', '所有服務', '智能客服',
+                        '常見問題', '隱私中心', '建議瀏覽器', '適合你大展身手',
+                        '我適合這份工作嗎', '這些工作也很適合你']
+
+        in_content = False
+        for line in lines:
+            # 開始內容標記
+            if any(marker in line for marker in ['工作內容', '職務類別', '公司名稱']) and not in_content:
+                in_content = True
+
+            # 跳過無關內容
+            if any(pattern in line for pattern in skip_patterns):
                 continue
 
-        # 提取公司名稱
-        company_selectors = [
-            '[data-qa="company-name"]',
-            '.job-header__company',
-            '.company-name'
-        ]
-        for selector in company_selectors:
-            try:
-                company = page.locator(selector).first
-                if await company.count() > 0:
-                    company_text = await company.inner_text()
-                    if company_text:
-                        info_parts.append(f"公司：{company_text.strip()}")
-                        break
-            except:
-                continue
+            # 結束標記
+            if '104人力銀行提醒您' in line or '職場安全提醒' in line:
+                break
 
-        # 提取薪資
-        salary_selectors = [
-            '[data-qa="salary"]',
-            '.job-header__salary',
-            '.salary'
-        ]
-        for selector in salary_selectors:
-            try:
-                salary = page.locator(selector).first
-                if await salary.count() > 0:
-                    salary_text = await salary.inner_text()
-                    if salary_text:
-                        info_parts.append(f"薪資：{salary_text.strip()}")
-                        break
-            except:
-                continue
+            if in_content and line:
+                cleaned_lines.append(line)
 
-        # 提取工作地點
-        location_selectors = [
-            '[data-qa="job-location"]',
-            '.job-header__location',
-            '.location'
-        ]
-        for selector in location_selectors:
-            try:
-                location = page.locator(selector).first
-                if await location.count() > 0:
-                    location_text = await location.inner_text()
-                    if location_text:
-                        info_parts.append(f"地點：{location_text.strip()}")
-                        break
-            except:
-                continue
-
-        # 提取職位描述
-        desc_selectors = [
-            '[data-qa="job-description"]',
-            '.job-description',
-            '.description'
-        ]
-        for selector in desc_selectors:
-            try:
-                description = page.locator(selector).first
-                if await description.count() > 0:
-                    desc_text = await description.inner_text()
-                    if desc_text:
-                        # 限制長度
-                        desc_preview = desc_text.strip()[:500]
-                        info_parts.append(f"職位描述：{desc_preview}")
-                        break
-            except:
-                continue
-
-        # 如果沒有提取到任何內容，嘗試獲取整個頁面的文字內容
-        if not info_parts:
-            print("⚠️  未找到特定元素，嘗試提取整體內容")
-            body_text = await page.locator('body').inner_text()
-            # 清理並限制長度
-            body_text = re.sub(r'\s+', ' ', body_text).strip()[:1500]
-            info_parts.append(f"頁面內容：{body_text}")
-
-        return "\n".join(info_parts) if info_parts else ""
+        cleaned_text = '\n'.join(cleaned_lines)
+        print(f"✅ 提取清理後的文本（{len(cleaned_text)} 字元）")
+        return cleaned_text
 
     except Exception as e:
         print(f"⚠️  104 動態內容提取失敗：{e}")
+        import traceback
+        traceback.print_exc()
         return ""
+
+
+def extract_section(lines: list, start_marker: str, end_marker: str) -> str:
+    """
+    從文本行列表中提取特定section的內容。
+
+    Args:
+        lines: 文本行列表
+        start_marker: section開始標記
+        end_marker: section結束標記
+
+    Returns:
+        提取的section內容
+    """
+    content_lines = []
+    capturing = False
+
+    # 過濾模式：移除冗餘的鏈接文字（僅用於職務類別section）
+    link_filter_patterns = [
+        '認識', '更多', '相關工作', '-求職面試工作問題',
+        '職務分析', '技能證照', '薪資和學習'
+    ]
+
+    for line in lines:
+        if start_marker in line:
+            capturing = True
+            # 如果這行只有標記，跳過；否則包含這行
+            if line.strip() != start_marker:
+                content_lines.append(line)
+            continue
+
+        if capturing:
+            if end_marker in line:
+                break
+
+            # 對於職務類別section，過濾掉鏈接文字
+            if start_marker == '職務類別':
+                if any(pattern in line for pattern in link_filter_patterns):
+                    continue
+                # 過濾掉只有頓號的行
+                if line.strip() == '、':
+                    continue
+
+            content_lines.append(line)
+
+    return '\n'.join(content_lines).strip()
 
 
 async def fetch_dynamic_content(url: str) -> Optional[str]:
@@ -538,6 +585,7 @@ async def analyze_job_detail(job_query: str) -> Dict[str, Any]:
     if url:
         # 如果包含 URL，先提取網頁內容
         webpage_content = await fetch_webpage_content(url)
+        print(webpage_content)
         result["webpage_content"] = webpage_content
 
     # 準備職缺資訊
