@@ -585,7 +585,6 @@ async def analyze_job_detail(job_query: str) -> Dict[str, Any]:
     if url:
         # 如果包含 URL，先提取網頁內容
         webpage_content = await fetch_webpage_content(url)
-        print(webpage_content)
         result["webpage_content"] = webpage_content
 
     # 準備職缺資訊
