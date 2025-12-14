@@ -23,7 +23,19 @@ class BasicCommands(commands.Cog):
     async def hello(self, interaction: discord.Interaction):
         """打招呼斜線指令。"""
         await interaction.response.send_message(
-            f"你好，{interaction.user.mention}！👋"
+            f"你好呀，{interaction.user.mention}！👋"
+        )
+
+    @app_commands.command(name="peak", description="童軍小隊")
+    async def peak(self, interaction: discord.Interaction):
+        await interaction.response.send_message(
+            "童軍小隊，出發！🚀⛺🔥"
+        )
+
+    @app_commands.command(name="repo", description="撿垃圾大軍")
+    async def repo(self, interaction: discord.Interaction):
+        await interaction.response.send_message(
+            "撿垃圾大軍，出發！🗑️🚮♻️"
         )
         
     @app_commands.command(name="dean", description="dean")
@@ -31,19 +43,6 @@ class BasicCommands(commands.Cog):
         await interaction.response.send_message(
             "媽 dean，閉嘴"
         )
-
-    @app_commands.command(name="info", description="顯示 Bot 資訊")
-    async def info(self, interaction: discord.Interaction):
-        """顯示 Bot 資訊斜線指令。"""
-        embed = discord.Embed(
-            title="Bot 資訊",
-            description="這是拉芙塔莉雅",
-            color=discord.Color.blue()
-        )
-        embed.add_field(name="Bot 名稱", value=self.bot.user.name, inline=True)
-        embed.add_field(name="伺服器數量", value=len(self.bot.guilds), inline=True)
-
-        await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name="找工作", description="使用 AI 搜尋 104 工作")
     @app_commands.describe(輸入="範例：我想找文山的 Python 工程師工作，薪水至少5萬")
