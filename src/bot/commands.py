@@ -41,7 +41,13 @@ class BasicCommands(commands.Cog):
     @app_commands.command(name="dean", description="dean")
     async def dean(self, interaction: discord.Interaction):
         await interaction.response.send_message(
-            "媽 dean，閉嘴"
+            "媽 dean"
+        )
+
+    @app_commands.command(name="lin", description="lin")
+    async def lin(self, interaction: discord.Interaction):
+        await interaction.response.send_message(
+            f"林冠勳會養 {interaction.user.mention}！💵"
         )
 
     @app_commands.command(name="找工作", description="使用 AI 搜尋 104 工作")
