@@ -20,8 +20,10 @@ RUN uv sync --frozen --no-install-project
 # ==========================================
 FROM python:3.13-slim
 
-# Install runtime dependencies for Playwright
+# Install runtime dependencies for Playwright and health check
 RUN apt-get update && apt-get install -y \
+    # curl for health check
+    curl \
     # Playwright browser dependencies
     libnss3 \
     libnspr4 \
@@ -77,9 +79,12 @@ RUN uv run playwright install --with-deps chromium
 # Switch to non-root user
 USER botuser
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD uv run python -c "import sys; sys.exit(0)"
+# Expose API port (default 8080)
+EXPOSE 8080
+
+# Health check using API endpoint
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
 
 # Run the bot using uv
 CMD ["uv", "run", "python", "bot.py"]

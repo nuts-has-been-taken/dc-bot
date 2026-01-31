@@ -24,6 +24,12 @@ class Config:
     DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
     DISCORD_COMMAND_PREFIX = os.getenv("DISCORD_COMMAND_PREFIX", "!")
 
+    # API Server 設定（接收外部通知用）
+    API_HOST = os.getenv("API_HOST", "0.0.0.0")
+    API_PORT = int(os.getenv("API_PORT", "8080"))
+    API_KEY = os.getenv("DISCORD_BOT_API_KEY")
+    DEFAULT_NOTIFICATION_CHANNEL_ID = os.getenv("DISCORD_DEFAULT_CHANNEL_ID")
+
     @classmethod
     def validate(cls):
         """
@@ -66,6 +72,21 @@ class Config:
         return {
             "token": cls.DISCORD_TOKEN,
             "command_prefix": cls.DISCORD_COMMAND_PREFIX,
+        }
+
+    @classmethod
+    def get_api_config(cls):
+        """
+        獲取 API Server 配置。
+
+        Returns:
+            包含 API Server 配置的字典
+        """
+        return {
+            "host": cls.API_HOST,
+            "port": cls.API_PORT,
+            "api_key": cls.API_KEY,
+            "default_channel_id": cls.DEFAULT_NOTIFICATION_CHANNEL_ID,
         }
 
 
