@@ -1,80 +1,54 @@
-"""Discord Bot 啟動腳本 - 同時運行 Discord Bot 和 API Server。"""
+"""Discord Bot entry point — Claude Agent SDK driven."""
 
 import asyncio
+from pathlib import Path
 
-import uvicorn
-
-from src.api import create_app
+from src.agent.config import AgentConfig
+from src.agent.runner import AgentRunner
+from src.agent.session import SessionStore
+from src.agent.tools.discord_mcp import DiscordToolset
 from src.bot.client import DiscordBot
+from src.bot.cogs import chat as chat_cog
 from src.config import Config
 
 
-async def run_api_server(app, host: str, port: int):
-    """運行 FastAPI Server。"""
-    config = uvicorn.Config(
-        app,
-        host=host,
-        port=port,
-        log_level="info",
-    )
-    server = uvicorn.Server(config)
-    await server.serve()
-
-
 async def main():
-    """主程式入口。"""
-    # 驗證配置
     try:
         Config.validate()
     except ValueError as e:
         print(f"配置錯誤: {e}")
         return
 
-    # 獲取配置
-    discord_config = Config.get_discord_config()
-    api_config = Config.get_api_config()
+    discord_cfg = Config.get_discord_config()
+    agent_cfg_raw = Config.get_agent_config()
 
-    # 建立 Bot 實例
-    bot = DiscordBot(command_prefix=discord_config["command_prefix"])
+    data_dir: Path = agent_cfg_raw["data_dir"]
+    db_path: Path = agent_cfg_raw["db_path"]
+    data_dir.mkdir(parents=True, exist_ok=True)
+    (data_dir / "members").mkdir(exist_ok=True)
+    (data_dir / "threads").mkdir(exist_ok=True)
+    (data_dir / "knowledge").mkdir(exist_ok=True)
+    (data_dir / "scratch").mkdir(exist_ok=True)
 
-    # 建立 FastAPI 應用程式並注入 bot 實例
-    app = create_app(bot=bot)
+    sessions = SessionStore(db_path)
+    await sessions.init()
 
-    # 載入基本指令
-    try:
-        await bot.load_extension("src.bot.commands")
-        print("已載入基本指令模組")
-    except Exception as e:
-        print(f"載入指令模組時發生錯誤: {e}")
+    bot = DiscordBot(command_prefix=discord_cfg["command_prefix"])
 
-    # 同時運行 Discord Bot 和 API Server
+    discord_tools = DiscordToolset(bot)
+    agent_cfg = AgentConfig(
+        data_dir=data_dir,
+        db_path=db_path,
+        model=agent_cfg_raw["model"],
+    )
+    runner = AgentRunner(agent_cfg, discord_toolset=discord_tools)
+
+    await bot.load_extension("src.bot.cogs.fun")
+    await chat_cog.setup(bot, runner, sessions)
+
+    print("啟動 Discord Bot...")
     async with bot:
-        # 建立 tasks
-        discord_task = asyncio.create_task(
-            bot.start(discord_config["token"]),
-            name="discord_bot",
-        )
-        api_task = asyncio.create_task(
-            run_api_server(app, api_config["host"], api_config["port"]),
-            name="api_server",
-        )
-
-        print(f"\n啟動 API Server: http://{api_config['host']}:{api_config['port']}")
-        print("啟動 Discord Bot...")
-
-        # 等待任一 task 完成（通常是 Ctrl+C 觸發）
-        done, pending = await asyncio.wait(
-            [discord_task, api_task],
-            return_when=asyncio.FIRST_COMPLETED,
-        )
-
-        # 取消尚未完成的 tasks
-        for task in pending:
-            task.cancel()
-            try:
-                await task
-            except asyncio.CancelledError:
-                pass
+        await bot.start(discord_cfg["token"])
 
 
 if __name__ == "__main__":
