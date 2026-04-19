@@ -1,0 +1,74 @@
+from pathlib import Path
+from unittest.mock import patch
+
+import pytest
+
+from src.agent.config import AgentConfig
+from src.agent.events import AgentEventType
+from src.agent.runner import AgentRunner
+from tests.conftest import FakeSDKMessage, make_fake_query
+
+
+@pytest.mark.asyncio
+async def test_run_streams_text_and_emits_done(tmp_path):
+    cfg = AgentConfig(
+        data_dir=tmp_path / "data", db_path=tmp_path / "s.sqlite"
+    )
+    runner = AgentRunner(cfg, discord_toolset=None)
+
+    messages = [
+        FakeSDKMessage(kind="assistant", text="你好"),
+        FakeSDKMessage(kind="assistant", text="主人～"),
+        FakeSDKMessage(kind="result", session_id="sess-001"),
+    ]
+    with patch(
+        "src.agent.runner.sdk_query",
+        side_effect=make_fake_query(messages),
+    ):
+        events = []
+        async for ev in runner.run(
+            user_input="hi",
+            mode="oneshot",
+            user_id="u1",
+        ):
+            events.append(ev)
+
+    assert [e.type for e in events] == [
+        AgentEventType.TEXT,
+        AgentEventType.TEXT,
+        AgentEventType.DONE,
+    ]
+    assert events[-1].session_id == "sess-001"
+
+
+@pytest.mark.asyncio
+async def test_run_includes_channel_context_preamble(tmp_path):
+    cfg = AgentConfig(
+        data_dir=tmp_path / "data", db_path=tmp_path / "s.sqlite"
+    )
+    runner = AgentRunner(cfg, discord_toolset=None)
+
+    from datetime import datetime
+    from src.agent.events import ChannelMsg
+
+    ctx = [
+        ChannelMsg("alice", "hi", datetime(2026, 4, 20, 10)),
+        ChannelMsg("bob", "yo", datetime(2026, 4, 20, 10, 1)),
+    ]
+
+    captured_prompt = {}
+
+    async def capture(*args, **kwargs):
+        captured_prompt["input"] = kwargs.get("prompt") or (args[0] if args else "")
+        yield FakeSDKMessage(kind="result", session_id="s")
+
+    with patch("src.agent.runner.sdk_query", side_effect=capture):
+        async for _ in runner.run(
+            user_input="what?", mode="oneshot",
+            user_id="u", channel_context=ctx,
+        ):
+            pass
+
+    assert "alice: hi" in captured_prompt["input"]
+    assert "bob: yo" in captured_prompt["input"]
+    assert "what?" in captured_prompt["input"]
