@@ -2,93 +2,50 @@
 
 import os
 from pathlib import Path
+
 from dotenv import load_dotenv
 
-# 找到 .env 文件的路徑（在專案根目錄）
 BASE_DIR = Path(__file__).resolve().parent.parent
 ENV_FILE = BASE_DIR / ".env"
 
-# 載入 .env 文件
 load_dotenv(ENV_FILE)
 
 
 class Config:
     """應用程式配置類別。"""
 
-    # LLM API 設定
-    LLM_API_KEY = os.getenv("LLM_API_KEY")
-    LLM_API_URL = os.getenv("LLM_API_URL")
-    LLM_MODEL = os.getenv("LLM_MODEL", "gpt-5")
+    # Discord
+    DISCORD_TOKEN: str | None = os.getenv("DISCORD_TOKEN")
+    DISCORD_COMMAND_PREFIX: str = os.getenv("DISCORD_COMMAND_PREFIX", "!")
 
-    # Discord Bot 設定
-    DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-    DISCORD_COMMAND_PREFIX = os.getenv("DISCORD_COMMAND_PREFIX", "!")
-
-    # API Server 設定（接收外部通知用）
-    API_HOST = os.getenv("API_HOST", "0.0.0.0")
-    API_PORT = int(os.getenv("API_PORT", "8080"))
-    API_KEY = os.getenv("DISCORD_BOT_API_KEY")
-    DEFAULT_NOTIFICATION_CHANNEL_ID = os.getenv("DISCORD_DEFAULT_CHANNEL_ID")
+    # Agent
+    ANTHROPIC_MODEL: str = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")
+    DATA_DIR: Path = Path(os.getenv("DATA_DIR", str(BASE_DIR / "data"))).resolve()
+    DB_PATH: Path = Path(
+        os.getenv("DB_PATH", str(BASE_DIR / "src" / "db" / "sessions.sqlite"))
+    ).resolve()
 
     @classmethod
-    def validate(cls):
-        """
-        驗證必要的配置是否已設定。
-
-        Raises:
-            ValueError: 當必要的配置缺失時
-        """
-        if not cls.LLM_API_KEY:
-            raise ValueError(
-                "LLM_API_KEY is not set. Please create a .env file with your API key."
-            )
+    def validate(cls) -> None:
         if not cls.DISCORD_TOKEN:
             raise ValueError(
-                "DISCORD_TOKEN is not set. Please create a .env file with your Discord bot token."
+                "DISCORD_TOKEN is not set. Create a .env file based on .env_example."
             )
 
     @classmethod
-    def get_llm_config(cls):
-        """
-        獲取 LLM 配置。
-
-        Returns:
-            包含 LLM 配置的字典
-        """
-        return {
-            "api_key": cls.LLM_API_KEY,
-            "api_url": cls.LLM_API_URL,
-            "model": cls.LLM_MODEL,
-        }
-
-    @classmethod
-    def get_discord_config(cls):
-        """
-        獲取 Discord 配置。
-
-        Returns:
-            包含 Discord 配置的字典
-        """
+    def get_discord_config(cls) -> dict:
         return {
             "token": cls.DISCORD_TOKEN,
             "command_prefix": cls.DISCORD_COMMAND_PREFIX,
         }
 
     @classmethod
-    def get_api_config(cls):
-        """
-        獲取 API Server 配置。
-
-        Returns:
-            包含 API Server 配置的字典
-        """
+    def get_agent_config(cls) -> dict:
         return {
-            "host": cls.API_HOST,
-            "port": cls.API_PORT,
-            "api_key": cls.API_KEY,
-            "default_channel_id": cls.DEFAULT_NOTIFICATION_CHANNEL_ID,
+            "model": cls.ANTHROPIC_MODEL,
+            "data_dir": cls.DATA_DIR,
+            "db_path": cls.DB_PATH,
         }
 
 
-# 建立全域配置實例
 config = Config()
