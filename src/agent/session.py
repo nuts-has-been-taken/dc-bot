@@ -2,7 +2,7 @@
 
 import json
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal
 
@@ -55,7 +55,7 @@ class SessionStore:
         mode: Mode,
         metadata: dict,
     ) -> Session:
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute(
                 "INSERT INTO sessions "
@@ -111,7 +111,7 @@ class SessionStore:
                 "WHERE discord_session_id = ?",
                 (
                     claude_session_id,
-                    datetime.utcnow().isoformat(),
+                    datetime.now(UTC).isoformat(),
                     discord_session_id,
                 ),
             )
@@ -122,7 +122,7 @@ class SessionStore:
             await db.execute(
                 "UPDATE sessions SET last_active_at = ? "
                 "WHERE discord_session_id = ?",
-                (datetime.utcnow().isoformat(), discord_session_id),
+                (datetime.now(UTC).isoformat(), discord_session_id),
             )
             await db.commit()
 
