@@ -1,28 +1,15 @@
 """MCP tool: search Taiwan 104 job listings."""
 
-import importlib.util
-import pathlib
 from dataclasses import dataclass, field
 from typing import Any
 
-# Load mappings.py directly to avoid triggering src/core/__init__.py
-# (which eagerly imports job104 → requests).
-_MAPPINGS_PATH = pathlib.Path(__file__).parent.parent.parent / "core" / "mappings.py"
-_spec = importlib.util.spec_from_file_location("_core_mappings", _MAPPINGS_PATH)
-_mappings_mod = importlib.util.module_from_spec(_spec)  # type: ignore[arg-type]
-_spec.loader.exec_module(_mappings_mod)  # type: ignore[union-attr]
-
-AREA_MAP: dict = _mappings_mod.AREA_MAP
-EDUCATION_MAP: dict = _mappings_mod.EDUCATION_MAP
-JOB_TYPE_MAP: dict = _mappings_mod.JOB_TYPE_MAP
-SORT_BY_MAP: dict = _mappings_mod.SORT_BY_MAP
-
-
-def search_104_jobs(*args, **kwargs):  # pragma: no cover
-    """Lazy proxy – defers requests import until first call."""
-    from src.core.job104 import search_104_jobs as _real  # noqa: PLC0415
-
-    return _real(*args, **kwargs)
+from src.core.job104 import search_104_jobs
+from src.core.mappings import (
+    AREA_MAP,
+    EDUCATION_MAP,
+    JOB_TYPE_MAP,
+    SORT_BY_MAP,
+)
 
 
 @dataclass
