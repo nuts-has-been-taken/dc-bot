@@ -23,16 +23,6 @@ from src.agent.tools.registry import (
 
 Mode = Literal["oneshot", "chat", "work", "dm"]
 
-# MCP tool names using the mcp__<server>__<tool> namespace convention
-_MCP_TOOL_NAMES: list[str] = [
-    "mcp__job_search__search_104_jobs",
-    "mcp__job_analysis__analyze_104_job",
-    "mcp__discord__fetch_channel_history",
-    "mcp__discord__send_embed",
-    "mcp__discord__react_to_message",
-    "mcp__discord__get_member_info",
-]
-
 # Filesystem tools that should be sandbox-checked
 _FS_TOOLS = frozenset({"Read", "Write", "Edit", "Glob", "Grep"})
 
@@ -53,26 +43,32 @@ def _make_path_guard(allowed_root: Path):
     async def can_use_tool(
         tool_name: str, tool_input: dict[str, Any], ctx: Any
     ) -> PermissionResultAllow | PermissionResultDeny:
-        if tool_name in _FS_TOOLS:
-            raw_path = (
-                tool_input.get("file_path")
-                or tool_input.get("path")
-                or tool_input.get("pattern")  # Glob
-                or ""
+        if tool_name not in _FS_TOOLS:
+            return PermissionResultAllow()
+
+        # Pick the path-ish key per tool
+        if tool_name == "Glob":
+            raw_path = tool_input.get("path") or tool_input.get("pattern") or ""
+        elif tool_name == "Grep":
+            raw_path = tool_input.get("path") or ""
+        else:  # Read / Write / Edit
+            raw_path = tool_input.get("file_path") or ""
+
+        if not raw_path:
+            return PermissionResultAllow()
+
+        try:
+            target = Path(raw_path)
+            if not target.is_absolute():
+                target = (allowed_root / target).resolve()
+            else:
+                target = target.resolve()
+            # Ensure target is within allowed_root
+            target.relative_to(allowed_root)
+        except (ValueError, OSError):
+            return PermissionResultDeny(
+                message=f"Path '{raw_path}' is outside the data/ sandbox.",
             )
-            if raw_path:
-                try:
-                    target = Path(raw_path)
-                    if not target.is_absolute():
-                        target = (allowed_root / target).resolve()
-                    else:
-                        target = target.resolve()
-                    # Ensure target is within allowed_root
-                    target.relative_to(allowed_root)
-                except (ValueError, OSError):
-                    return PermissionResultDeny(
-                        message=f"Path '{raw_path}' is outside the data/ sandbox.",
-                    )
         return PermissionResultAllow()
 
     return can_use_tool
@@ -94,6 +90,19 @@ class AgentRunner:
         }
         if discord_toolset is not None:
             self._mcp_servers["discord"] = build_discord_server(discord_toolset)
+
+        # MCP tool names built from whichever servers are present
+        self._mcp_tool_names: list[str] = [
+            "mcp__job_search__search_104_jobs",
+            "mcp__job_analysis__analyze_104_job",
+        ]
+        if discord_toolset is not None:
+            self._mcp_tool_names.extend([
+                "mcp__discord__fetch_channel_history",
+                "mcp__discord__send_embed",
+                "mcp__discord__react_to_message",
+                "mcp__discord__get_member_info",
+            ])
 
     def _build_prompt_input(
         self,
@@ -117,7 +126,7 @@ class AgentRunner:
             system_prompt=build_system_prompt(
                 mode=mode, user_id=user_id, thread_id=thread_id
             ),
-            allowed_tools=list(self.config.allowed_tools) + _MCP_TOOL_NAMES,
+            allowed_tools=list(self.config.allowed_tools) + self._mcp_tool_names,
             cwd=str(self.config.data_dir),
             max_turns=self.config.max_turns,
             resume=resume,
