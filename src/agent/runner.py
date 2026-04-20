@@ -4,9 +4,16 @@ from pathlib import Path
 from typing import Any, AsyncIterator, Literal
 
 from claude_agent_sdk import (
+    AssistantMessage,
     ClaudeAgentOptions,
     PermissionResultAllow,
     PermissionResultDeny,
+    ResultMessage,
+    SystemMessage,
+    TextBlock,
+    ToolResultBlock,
+    ToolUseBlock,
+    UserMessage,
     query as sdk_query,
 )
 
@@ -167,26 +174,31 @@ class AgentRunner:
 
         try:
             async for msg in sdk_query(prompt=_prompt_async_iter(prompt_input), options=options):
-                kind = getattr(msg, "kind", None) or msg.__class__.__name__.lower()
-
-                if kind in ("assistant", "assistantmessage") and getattr(msg, "text", None):
-                    yield AgentEvent(
-                        type=AgentEventType.TEXT, text=msg.text
-                    )
-                elif kind in ("tool_use", "tooluse"):
-                    yield AgentEvent(
-                        type=AgentEventType.TOOL_START,
-                        tool_name=getattr(msg, "tool_name", None),
-                        tool_args=getattr(msg, "tool_input", None),
-                    )
-                elif kind in ("tool_result", "toolresult"):
-                    yield AgentEvent(
-                        type=AgentEventType.TOOL_RESULT,
-                        tool_name=getattr(msg, "tool_name", None),
-                        tool_result=getattr(msg, "tool_output", None),
-                    )
-                elif kind in ("result", "resultmessage"):
+                if isinstance(msg, AssistantMessage):
+                    for block in msg.content:
+                        if isinstance(block, TextBlock):
+                            if block.text:
+                                yield AgentEvent(type=AgentEventType.TEXT, text=block.text)
+                        elif isinstance(block, ToolUseBlock):
+                            yield AgentEvent(
+                                type=AgentEventType.TOOL_START,
+                                tool_name=block.name,
+                                tool_args=block.input,
+                            )
+                elif isinstance(msg, UserMessage):
+                    # Often contains tool_result blocks in multi-turn tool calls
+                    for block in getattr(msg, "content", []) or []:
+                        if isinstance(block, ToolResultBlock):
+                            text = block.content if isinstance(block.content, str) else str(block.content)
+                            yield AgentEvent(
+                                type=AgentEventType.TOOL_RESULT,
+                                tool_result=text,
+                            )
+                elif isinstance(msg, ResultMessage):
                     session_id = getattr(msg, "session_id", None)
+                elif isinstance(msg, SystemMessage):
+                    # informational; ignore
+                    pass
 
         except Exception as exc:
             yield AgentEvent(type=AgentEventType.ERROR, error=str(exc))

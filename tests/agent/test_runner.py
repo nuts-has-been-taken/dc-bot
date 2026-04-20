@@ -3,10 +3,12 @@ from unittest.mock import patch
 
 import pytest
 
+from claude_agent_sdk import AssistantMessage, ResultMessage, TextBlock
+
 from src.agent.config import AgentConfig
 from src.agent.events import AgentEventType
 from src.agent.runner import AgentRunner
-from tests.conftest import FakeSDKMessage, make_fake_query
+from tests.conftest import make_fake_query
 
 
 @pytest.mark.asyncio
@@ -17,9 +19,16 @@ async def test_run_streams_text_and_emits_done(tmp_path):
     runner = AgentRunner(cfg, discord_toolset=None)
 
     messages = [
-        FakeSDKMessage(kind="assistant", text="你好"),
-        FakeSDKMessage(kind="assistant", text="主人～"),
-        FakeSDKMessage(kind="result", session_id="sess-001"),
+        AssistantMessage(content=[TextBlock(text="你好")], model="claude-sonnet-4-6"),
+        AssistantMessage(content=[TextBlock(text="主人～")], model="claude-sonnet-4-6"),
+        ResultMessage(
+            subtype="success",
+            duration_ms=0,
+            duration_api_ms=0,
+            is_error=False,
+            num_turns=1,
+            session_id="sess-001",
+        ),
     ]
     with patch(
         "src.agent.runner.sdk_query",
@@ -69,7 +78,14 @@ async def test_run_includes_channel_context_preamble(tmp_path):
             else:
                 collected.append(str(chunk))
         captured_prompt["input"] = "\n".join(collected)
-        yield FakeSDKMessage(kind="result", session_id="s")
+        yield ResultMessage(
+            subtype="success",
+            duration_ms=0,
+            duration_api_ms=0,
+            is_error=False,
+            num_turns=1,
+            session_id="s",
+        )
 
     with patch("src.agent.runner.sdk_query", side_effect=capture):
         async for _ in runner.run(
