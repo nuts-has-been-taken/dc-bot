@@ -138,7 +138,6 @@ class ChatCog(commands.Cog):
             async for event in self.runner.run(
                 user_input=message.content,
                 mode="oneshot",
-                user_id=str(message.author.id),
                 user_name=str(message.author.display_name),
                 channel_context=ctx,
             ):
@@ -173,7 +172,6 @@ class ChatCog(commands.Cog):
             async for event in self.runner.run(
                 user_input=message.content,
                 mode=mode,
-                user_id=str(message.author.id),
                 user_name=str(message.author.display_name),
                 resume=sess.claude_session_id,
                 thread_id=thread_id,

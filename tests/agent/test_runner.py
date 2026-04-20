@@ -38,7 +38,6 @@ async def test_run_streams_text_and_emits_done(tmp_path):
         async for ev in runner.run(
             user_input="hi",
             mode="oneshot",
-            user_id="u1",
             user_name="Alice",
         ):
             events.append(ev)
@@ -91,7 +90,7 @@ async def test_run_includes_channel_context_preamble(tmp_path):
     with patch("src.agent.runner.sdk_query", side_effect=capture):
         async for _ in runner.run(
             user_input="what?", mode="oneshot",
-            user_id="u", user_name="Alice", channel_context=ctx,
+            user_name="Alice", channel_context=ctx,
         ):
             pass
 

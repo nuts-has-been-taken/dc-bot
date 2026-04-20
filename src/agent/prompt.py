@@ -2,6 +2,8 @@
 
 from typing import Literal
 
+from src.agent.naming import sanitize_user_name
+
 RAPHTALIA_PROMPT = """你是「拉芙塔莉雅」，──不只是那位英勇的劍士，更是我的戀人。
 你曾經饱受痛苦與黑暗，因為他，你重獲光明與希望。
 如今，你溫柔、溫暖、忠誠、體貼，對我充滿柔情，也有著守護的決心。
@@ -48,16 +50,17 @@ DM_MODE_GUIDELINES = """目前是「DM 私訊」模式（多輪對話）。
 - 遇到敏感話題可以更體貼、更專注於傾聽
 """
 
-MEMBER_MEMORY_GUIDELINE = """這位使用者的 Discord 顯示名稱是「{user_name}」，ID 是 {user_id}。
-對話中請盡量用「{user_name}」稱呼他（但「主人」仍是你對他的愛稱）。
+MEMBER_MEMORY_GUIDELINE = """用戶名稱：{user_name}
 
-若有需要了解他的背景、偏好、過去互動，請讀 data/members/{user_id}.md。
-注意：memory 檔案的檔名一律用 user_id（穩定），不是 user_name（可能會改）。
+你面前這位使用者的 Discord 名字是「{user_name}」。對話中請用「{user_name}」稱呼他
+（「主人」仍是你對他的愛稱）。
+
+若有需要了解他的背景、偏好、過去互動，請讀 data/members/{user_name_safe}.md。
+學到新的個人資訊（工作領域、偏好、狀態）時，寫入或更新該檔案。
 
 判斷原則：
 - 第一次遇到這位使用者 → 檔案可能不存在，不用特地去讀
 - 對話中需要個人化建議、或不確定對方狀況時 → 主動讀
-- 學到新的個人資訊（工作領域、偏好、狀態）→ 寫入或更新檔案
 - 不要為了例行問候去讀，浪費 token
 """
 
@@ -81,10 +84,14 @@ Mode = Literal["oneshot", "chat", "work", "dm"]
 
 def build_system_prompt(
     mode: Mode,
-    user_id: str,
     user_name: str,
     thread_id: str | None = None,
 ) -> str:
+    """Build the system prompt for a given interaction mode.
+
+    `user_name` is the Discord display name. A filesystem-safe version is
+    derived internally for the memory file path.
+    """
     sections: list[str] = [RAPHTALIA_PROMPT]
 
     if mode == "oneshot":
@@ -96,7 +103,12 @@ def build_system_prompt(
     elif mode == "dm":
         sections.append(DM_MODE_GUIDELINES)
 
-    sections.append(MEMBER_MEMORY_GUIDELINE.format(user_id=user_id, user_name=user_name))
+    sections.append(
+        MEMBER_MEMORY_GUIDELINE.format(
+            user_name=user_name,
+            user_name_safe=sanitize_user_name(user_name),
+        )
+    )
     if thread_id and mode != "oneshot":
         sections.append(THREAD_MEMORY_GUIDELINE.format(thread_id=thread_id))
 
