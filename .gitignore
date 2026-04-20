@@ -211,5 +211,8 @@ data/
 src/db/*.sqlite
 src/db/*.sqlite-journal
 
+# launchd logs
+logs/
+
 # pytest
 .pytest_cache/
