@@ -59,7 +59,16 @@ async def test_run_includes_channel_context_preamble(tmp_path):
     captured_prompt = {}
 
     async def capture(*args, **kwargs):
-        captured_prompt["input"] = kwargs.get("prompt") or (args[0] if args else "")
+        # prompt is now an AsyncIterable[dict]; consume it to a single string
+        prompt_arg = kwargs.get("prompt") or (args[0] if args else None)
+        collected = []
+        async for chunk in prompt_arg:
+            if isinstance(chunk, dict):
+                msg = chunk.get("message") or {}
+                collected.append(msg.get("content", ""))
+            else:
+                collected.append(str(chunk))
+        captured_prompt["input"] = "\n".join(collected)
         yield FakeSDKMessage(kind="result", session_id="s")
 
     with patch("src.agent.runner.sdk_query", side_effect=capture):

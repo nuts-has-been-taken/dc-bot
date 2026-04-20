@@ -27,6 +27,22 @@ Mode = Literal["oneshot", "chat", "work", "dm"]
 _FS_TOOLS = frozenset({"Read", "Write", "Edit", "Glob", "Grep"})
 
 
+async def _prompt_async_iter(text: str):
+    """Wrap a plain string into the AsyncIterable[dict] envelope the SDK expects.
+
+    The SDK's streaming protocol requires each dict to have the shape:
+        {"type": "user", "message": {"role": "user", "content": "..."}, ...}
+
+    Passing a plain str is rejected when can_use_tool is set on the options.
+    """
+    yield {
+        "type": "user",
+        "message": {"role": "user", "content": text},
+        "parent_tool_use_id": None,
+        "session_id": None,
+    }
+
+
 def _format_channel_context(ctx: list[ChannelMsg]) -> str:
     if not ctx:
         return ""
@@ -150,7 +166,7 @@ class AgentRunner:
         session_id: str | None = None
 
         try:
-            async for msg in sdk_query(prompt=prompt_input, options=options):
+            async for msg in sdk_query(prompt=_prompt_async_iter(prompt_input), options=options):
                 kind = getattr(msg, "kind", None) or msg.__class__.__name__.lower()
 
                 if kind in ("assistant", "assistantmessage") and getattr(msg, "text", None):
