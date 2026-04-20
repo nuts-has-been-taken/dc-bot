@@ -95,8 +95,7 @@ class ChatCog(commands.Cog):
 
         thread = await interaction.channel.create_thread(
             name=f"{topic} - {interaction.user.display_name}",
-            type=discord.ChannelType.private_thread,
-            invitable=False,
+            type=discord.ChannelType.public_thread,
         )
         await thread.add_user(interaction.user)
 
