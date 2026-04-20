@@ -66,7 +66,7 @@ class ChatCog(commands.Cog):
 
     @app_commands.command(
         name="chat",
-        description="開一個私人 thread 與 bot 多輪對話",
+        description="開一個公開 thread 與 bot 多輪對話",
     )
     async def chat_cmd(self, interaction: discord.Interaction):
         await self._open_thread(interaction, mode="chat", topic="聊天")
@@ -138,6 +138,7 @@ class ChatCog(commands.Cog):
                 user_input=message.content,
                 mode="oneshot",
                 user_name=str(message.author.display_name),
+                user_id=str(message.author.id),
                 channel_context=ctx,
             ):
                 await streamer.handle(event)
@@ -172,6 +173,7 @@ class ChatCog(commands.Cog):
                 user_input=message.content,
                 mode=mode,
                 user_name=str(message.author.display_name),
+                user_id=str(message.author.id),
                 resume=sess.claude_session_id,
                 thread_id=thread_id,
             ):

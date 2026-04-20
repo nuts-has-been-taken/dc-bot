@@ -31,6 +31,7 @@ class AgentConfig:
     model: str = "claude-sonnet-4-6"
     max_turns: int = 20
     timeout_seconds: int = 60
+    owner_id: str = ""  # Discord user ID of the bot owner
 
     allowed_tools: list[str] = field(default_factory=lambda: ALLOWED_TOOLS.copy())
     allowed_paths: list[str] = field(default_factory=lambda: ALLOWED_PATHS.copy())

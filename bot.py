@@ -33,13 +33,17 @@ async def main():
     sessions = SessionStore(db_path)
     await sessions.init()
 
-    bot = DiscordBot(command_prefix=discord_cfg["command_prefix"])
+    bot = DiscordBot(
+        command_prefix=discord_cfg["command_prefix"],
+        guild_ids=discord_cfg["guild_ids"],
+    )
 
     discord_tools = DiscordToolset(bot)
     agent_cfg = AgentConfig(
         data_dir=data_dir,
         db_path=db_path,
         model=agent_cfg_raw["model"],
+        owner_id=agent_cfg_raw["owner_id"],
     )
     runner = AgentRunner(agent_cfg, discord_toolset=discord_tools)
 

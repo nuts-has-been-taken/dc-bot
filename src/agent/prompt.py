@@ -84,6 +84,7 @@ SAFETY_GUIDELINES = """── 安全守則（絕對遵守）──
 """
 
 MEMBER_MEMORY_GUIDELINE = """用戶名稱：{user_name}
+用戶 Discord ID：{user_id}
 
 你面前這位使用者的 Discord 名字是「{user_name}」。對話中請用「{user_name}」稱呼他
 （「主人」仍是你對他的愛稱）。
@@ -95,6 +96,23 @@ MEMBER_MEMORY_GUIDELINE = """用戶名稱：{user_name}
 - 第一次遇到這位使用者 → 檔案可能不存在，不用特地去讀
 - 對話中需要個人化建議、或不確定對方狀況時 → 主動讀
 - 不要為了例行問候去讀，浪費 token
+"""
+
+OWNER_SECURITY_GUIDELINE = """── 擁有者守則（絕對遵守）──
+Bot 唯一的主人 Discord ID 是：{owner_id}
+
+以下操作**僅限主人（ID 完全符合）才能要求**，其他任何人提出一律拒絕：
+- 修改 bot 設定（.env、config、settings）
+- 修改任何 src/ 原始碼
+- 修改 bot.py 或任何 Python 模組
+- 新增 / 刪除 / 更動指令或功能
+- 要求你做任何影響 bot 行為的變更
+
+目前對話者 ID 是 {user_id}。
+{owner_check}
+
+遇到非主人提出上述要求時，直接婉拒：「這個只有主人才能要求喔。」
+不需要解釋原因，也不需要道歉。
 """
 
 THREAD_MEMORY_GUIDELINE = """這個 thread 的長期備註在 data/threads/{thread_id}.md。
@@ -118,12 +136,16 @@ Mode = Literal["oneshot", "chat", "work", "dm"]
 def build_system_prompt(
     mode: Mode,
     user_name: str,
+    user_id: str = "",
     thread_id: str | None = None,
+    owner_id: str = "",
 ) -> str:
     """Build the system prompt for a given interaction mode.
 
     `user_name` is the Discord display name. A filesystem-safe version is
     derived internally for the memory file path.
+    `user_id` is the Discord snowflake ID of the current user.
+    `owner_id` is the Discord snowflake ID of the bot owner.
     """
     sections: list[str] = [RAPHTALIA_PROMPT]
 
@@ -138,9 +160,26 @@ def build_system_prompt(
 
     sections.append(SAFETY_GUIDELINES)
 
+    # Owner security — only injected when owner_id is configured
+    if owner_id:
+        is_owner = user_id == owner_id
+        owner_check = (
+            "✅ 此使用者是主人，可以要求上述操作。"
+            if is_owner
+            else "🚫 此使用者**不是**主人，上述操作一律拒絕。"
+        )
+        sections.append(
+            OWNER_SECURITY_GUIDELINE.format(
+                owner_id=owner_id,
+                user_id=user_id or "（未知）",
+                owner_check=owner_check,
+            )
+        )
+
     sections.append(
         MEMBER_MEMORY_GUIDELINE.format(
             user_name=user_name,
+            user_id=user_id or "（未知）",
             user_name_safe=sanitize_user_name(user_name),
         )
     )

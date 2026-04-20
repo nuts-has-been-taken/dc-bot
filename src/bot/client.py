@@ -7,12 +7,18 @@ from discord.ext import commands
 class DiscordBot(commands.Bot):
     """Discord Bot 客戶端類別。"""
 
-    def __init__(self, command_prefix: str = "!", **kwargs):
+    def __init__(
+        self,
+        command_prefix: str = "!",
+        guild_ids: list[int] | None = None,
+        **kwargs,
+    ):
         """
         初始化 Discord Bot。
 
         Args:
             command_prefix: 指令前綴，預設為 "!"
+            guild_ids: 需要立即同步斜線指令的 Guild ID 清單（guild sync 即時生效）
             **kwargs: 其他傳遞給 commands.Bot 的參數
         """
         # 設定 Intents（權限）
@@ -23,19 +29,29 @@ class DiscordBot(commands.Bot):
         super().__init__(
             command_prefix=command_prefix,
             intents=intents,
-            **kwargs
+            **kwargs,
         )
+        self._guild_ids: list[int] = guild_ids or []
 
     async def setup_hook(self):
         """Bot 設定 Hook，在 Bot 啟動前執行。"""
-        # 注意：指令模組會在 bot.py 中載入
-        # 這裡只負責同步斜線指令到 Discord
         print("正在同步斜線指令到 Discord...")
         try:
+            # 全域同步（最多 1 小時傳播）
             synced = await self.tree.sync()
-            print(f"✅ 成功同步 {len(synced)} 個斜線指令")
+            print(f"✅ 全域同步完成：{len(synced)} 個斜線指令")
         except Exception as e:
-            print(f"❌ 同步斜線指令時發生錯誤: {e}")
+            print(f"❌ 全域同步失敗: {e}")
+
+        # Guild-specific sync（立即生效）
+        for gid in self._guild_ids:
+            guild = discord.Object(id=gid)
+            try:
+                self.tree.copy_global_to(guild=guild)
+                g_synced = await self.tree.sync(guild=guild)
+                print(f"✅ Guild {gid} 同步完成：{len(g_synced)} 個斜線指令")
+            except Exception as e:
+                print(f"❌ Guild {gid} 同步失敗: {e}")
 
     async def on_ready(self):
         """當 Bot 成功連接到 Discord 時觸發。"""
