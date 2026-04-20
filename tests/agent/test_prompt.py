@@ -3,7 +3,7 @@ from src.agent.prompt import build_system_prompt
 
 def test_chat_mode_includes_raphtalia_and_chat_guidelines():
     prompt = build_system_prompt(
-        mode="chat", user_id="123", thread_id="999"
+        mode="chat", user_id="123", user_name="Alice", thread_id="999"
     )
     assert "拉芙塔莉雅" in prompt
     assert "data/members/123.md" in prompt
@@ -12,17 +12,25 @@ def test_chat_mode_includes_raphtalia_and_chat_guidelines():
 
 
 def test_work_mode_forces_104_tool_usage():
-    prompt = build_system_prompt(mode="work", user_id="123", thread_id="999")
+    prompt = build_system_prompt(mode="work", user_id="123", user_name="Alice", thread_id="999")
     assert "search_104_jobs" in prompt
     assert "analyze_104_job" in prompt
 
 
 def test_oneshot_mode_no_thread_memory():
-    prompt = build_system_prompt(mode="oneshot", user_id="123")
+    prompt = build_system_prompt(mode="oneshot", user_id="123", user_name="Alice")
     assert "data/threads/" not in prompt
     assert "data/members/123.md" in prompt
 
 
 def test_dm_mode_has_dm_guidelines():
-    prompt = build_system_prompt(mode="dm", user_id="123", thread_id="999")
+    prompt = build_system_prompt(mode="dm", user_id="123", user_name="Alice", thread_id="999")
     assert "私訊" in prompt or "DM" in prompt
+
+
+def test_member_guideline_includes_user_name():
+    prompt = build_system_prompt(
+        mode="chat", user_id="123", user_name="Alice", thread_id="999"
+    )
+    assert "Alice" in prompt
+    assert "data/members/123.md" in prompt  # file path still uses id

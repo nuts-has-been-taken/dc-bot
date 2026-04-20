@@ -141,13 +141,14 @@ class AgentRunner:
         self,
         mode: Mode,
         user_id: str,
+        user_name: str,
         thread_id: str | None,
         resume: str | None,
     ) -> ClaudeAgentOptions:
         return ClaudeAgentOptions(
             model=self.config.model,
             system_prompt=build_system_prompt(
-                mode=mode, user_id=user_id, thread_id=thread_id
+                mode=mode, user_id=user_id, user_name=user_name, thread_id=thread_id
             ),
             allowed_tools=list(self.config.allowed_tools) + self._mcp_tool_names,
             cwd=str(self.config.data_dir),
@@ -162,13 +163,14 @@ class AgentRunner:
         user_input: str,
         mode: Mode,
         user_id: str,
+        user_name: str,
         *,
         resume: str | None = None,
         channel_context: list[ChannelMsg] | None = None,
         thread_id: str | None = None,
     ) -> AsyncIterator[AgentEvent]:
         prompt_input = self._build_prompt_input(user_input, channel_context)
-        options = self._build_options(mode, user_id, thread_id, resume)
+        options = self._build_options(mode, user_id, user_name, thread_id, resume)
 
         session_id: str | None = None
 

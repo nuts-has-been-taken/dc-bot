@@ -48,8 +48,11 @@ DM_MODE_GUIDELINES = """目前是「DM 私訊」模式（多輪對話）。
 - 遇到敏感話題可以更體貼、更專注於傾聽
 """
 
-MEMBER_MEMORY_GUIDELINE = """這位使用者的 Discord ID 是 {user_id}。
+MEMBER_MEMORY_GUIDELINE = """這位使用者的 Discord 顯示名稱是「{user_name}」，ID 是 {user_id}。
+對話中請盡量用「{user_name}」稱呼他（但「主人」仍是你對他的愛稱）。
+
 若有需要了解他的背景、偏好、過去互動，請讀 data/members/{user_id}.md。
+注意：memory 檔案的檔名一律用 user_id（穩定），不是 user_name（可能會改）。
 
 判斷原則：
 - 第一次遇到這位使用者 → 檔案可能不存在，不用特地去讀
@@ -79,6 +82,7 @@ Mode = Literal["oneshot", "chat", "work", "dm"]
 def build_system_prompt(
     mode: Mode,
     user_id: str,
+    user_name: str,
     thread_id: str | None = None,
 ) -> str:
     sections: list[str] = [RAPHTALIA_PROMPT]
@@ -92,7 +96,7 @@ def build_system_prompt(
     elif mode == "dm":
         sections.append(DM_MODE_GUIDELINES)
 
-    sections.append(MEMBER_MEMORY_GUIDELINE.format(user_id=user_id))
+    sections.append(MEMBER_MEMORY_GUIDELINE.format(user_id=user_id, user_name=user_name))
     if thread_id and mode != "oneshot":
         sections.append(THREAD_MEMORY_GUIDELINE.format(thread_id=thread_id))
 

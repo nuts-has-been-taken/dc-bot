@@ -139,6 +139,7 @@ class ChatCog(commands.Cog):
                 user_input=message.content,
                 mode="oneshot",
                 user_id=str(message.author.id),
+                user_name=str(message.author.display_name),
                 channel_context=ctx,
             ):
                 await streamer.handle(event)
@@ -173,6 +174,7 @@ class ChatCog(commands.Cog):
                 user_input=message.content,
                 mode=mode,
                 user_id=str(message.author.id),
+                user_name=str(message.author.display_name),
                 resume=sess.claude_session_id,
                 thread_id=thread_id,
             ):
