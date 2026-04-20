@@ -161,6 +161,35 @@ You can also send natural language messages to search for jobs:
 搜尋月薪 50000 以上的工作
 ```
 
+## Run as macOS Background Service
+
+On macOS you can run the bot as a user-level `launchd` service so it starts on
+login and auto-restarts on crash. The repo ships a plist template
+(`com.dc-bot.local-discord-bot.plist.template`) and a `Makefile` that fills in
+machine-specific paths (`uv`, project directory, `$HOME`) and installs it to
+`~/Library/LaunchAgents/`.
+
+Prerequisites: `uv sync` done and `.env` configured.
+
+```bash
+# Install and start the service
+make install-plist
+
+# Check status and tail recent logs
+make status-plist
+
+# Reinstall after editing the template
+make reload-plist
+
+# Stop and uninstall
+make uninstall-plist
+
+# List all targets
+make help
+```
+
+Logs are written to `logs/bot.log` and `logs/bot.error.log` (both gitignored).
+
 ## Docker Support
 
 ```bash
