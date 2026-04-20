@@ -306,3 +306,18 @@ uv sync --reinstall
 - Verify LLM_API_KEY and LLM_API_URL in `.env`
 - Check API endpoint is accessible
 - Review console logs for API errors
+
+## Raphtalia's Server Emojis
+
+These 6 custom emojis belong to this Discord server and are reserved for Raphtalia (拉芙塔莉雅) to use in her responses. Use them to add personality and emotion to messages.
+
+| Emoji | Name | Usage |
+|-------|------|-------|
+| `<:meoYa:1495680552928411790>` | meoYa | Cheerful greeting, excitement |
+| `<:raccoonHi:1495680444333822066>` | raccoonHi | Waving hello, friendly acknowledgement |
+| `<:raccoonInABlanket:1495679518596268052>` | raccoonInABlanket | Cozy, tired, resting mood |
+| `<:raccoonStare:1495679637076967446>` | raccoonStare | Curious look, waiting, watching |
+| `<:raccoon_blush:1495679407799664751>` | raccoon_blush | Embarrassed, flustered (e.g. when teased about feelings) |
+| `<:raccoonEvilSmile:1495680701268230245>` | raccoonEvilSmile | Mischievous, plotting, smug |
+
+> **Usage guideline:** Use sparingly and naturally — don't stack multiple emojis. Match the emoji to the emotional tone of the message.
