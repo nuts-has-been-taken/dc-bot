@@ -6,7 +6,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from src.agent.events import AgentEventType, ChannelMsg
+from src.agent.events import AgentEventType, ChannelMsg, trim_to_char_budget
 from src.agent.runner import AgentRunner
 from src.agent.session import SessionStore
 from src.bot.streamer import DiscordStreamer
@@ -14,7 +14,10 @@ from src.bot.streamer import DiscordStreamer
 
 Mode = Literal["chat", "work", "dm"]
 
-DEFAULT_CONTEXT_LIMIT = 10
+DEFAULT_CONTEXT_LIMIT = 25
+# Rough token proxy: drop oldest channel messages once formatted context
+# exceeds this many characters.
+CONTEXT_CHAR_BUDGET = 8000
 
 
 class ChatCog(commands.Cog):
@@ -131,6 +134,7 @@ class ChatCog(commands.Cog):
             for m in history
             if m.id != message.id
         ]
+        ctx = trim_to_char_budget(ctx, CONTEXT_CHAR_BUDGET)
 
         async with message.channel.typing():
             streamer = DiscordStreamer(message.channel, reply_to=message)

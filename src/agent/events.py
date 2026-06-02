@@ -32,3 +32,26 @@ class ChannelMsg:
 
     def format_line(self) -> str:
         return f"{self.author}: {self.content}"
+
+
+def trim_to_char_budget(
+    msgs: list[ChannelMsg], budget: int
+) -> list[ChannelMsg]:
+    """Drop oldest messages until the formatted lines fit within `budget` chars.
+
+    Character count is used as a rough token proxy. Walks from newest to oldest,
+    keeping messages while the running total stays within budget. Always keeps at
+    least the newest message, even if it alone exceeds the budget.
+    """
+    if not msgs:
+        return []
+
+    kept: list[ChannelMsg] = []
+    total = 0
+    for msg in reversed(msgs):
+        total += len(msg.format_line())
+        if kept and total > budget:
+            break
+        kept.append(msg)
+    kept.reverse()
+    return kept
