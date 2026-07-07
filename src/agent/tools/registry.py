@@ -63,7 +63,7 @@ def build_discord_server(toolset: DiscordToolset):
     @tool(
         "fetch_channel_history",
         "從 Discord 頻道取最近 N 則訊息，oldest → newest 排序。",
-        {"channel_id": int, "limit": int},
+        {"channel_id": str, "limit": int},
     )
     async def fetch_channel_history(args: dict[str, Any]) -> dict[str, Any]:
         msgs = await toolset.fetch_channel_history(
@@ -77,7 +77,7 @@ def build_discord_server(toolset: DiscordToolset):
         "send_embed",
         "在 Discord 頻道送一則 embed。",
         {
-            "channel_id": int,
+            "channel_id": str,
             "title": str,
             "description": str,
             "fields": list,
@@ -97,7 +97,7 @@ def build_discord_server(toolset: DiscordToolset):
     @tool(
         "react_to_message",
         "對某則 Discord 訊息加 emoji reaction。",
-        {"channel_id": int, "message_id": int, "emoji": str},
+        {"channel_id": str, "message_id": str, "emoji": str},
     )
     async def react_to_message(args: dict[str, Any]) -> dict[str, Any]:
         ok = await toolset.react_to_message(
@@ -110,7 +110,7 @@ def build_discord_server(toolset: DiscordToolset):
     @tool(
         "get_member_info",
         "查詢 Discord 使用者（可選指定 guild 以取得 member 資訊）。",
-        {"user_id": int, "guild_id": int},
+        {"user_id": str, "guild_id": str},
     )
     async def get_member_info(args: dict[str, Any]) -> dict[str, Any]:
         info = await toolset.get_member_info(

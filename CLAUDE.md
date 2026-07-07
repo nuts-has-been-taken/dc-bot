@@ -318,6 +318,6 @@ These 6 custom emojis belong to this Discord server and are reserved for Raphtal
 | `<:raccoonInABlanket:1495679518596268052>` | raccoonInABlanket | Cozy, tired, resting mood |
 | `<:raccoonStare:1495679637076967446>` | raccoonStare | Curious look, waiting, watching |
 | `<:raccoon_blush:1495679407799664751>` | raccoon_blush | Embarrassed, flustered (e.g. when teased about feelings) |
-| `<a:raccoonEvilSmile:1495680701268230245>` | raccoonEvilSmile | Mischievous, plotting, smug |
+| `<a:raccoonEvilSmile:1495680701268230245>` | raccoonEvilSmile | Mischievous, plotting, smug (animated GIF — must use `<a:name:id>` format) |
 
 > **Usage guideline:** Use sparingly and naturally — don't stack multiple emojis. Match the emoji to the emotional tone of the message.
