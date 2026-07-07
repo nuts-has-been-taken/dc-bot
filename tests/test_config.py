@@ -6,6 +6,9 @@ import pytest
 
 
 def test_config_validate_requires_discord_token(monkeypatch):
+    # Neutralize load_dotenv so reload() doesn't repopulate DISCORD_TOKEN from a
+    # real .env on the developer's machine.
+    monkeypatch.setattr("dotenv.load_dotenv", lambda *a, **k: None)
     monkeypatch.delenv("DISCORD_TOKEN", raising=False)
     from importlib import reload
     import src.config as config_mod
