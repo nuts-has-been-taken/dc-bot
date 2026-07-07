@@ -28,7 +28,7 @@ DISALLOWED_PATHS: list[str] = [
 class AgentConfig:
     data_dir: Path
     db_path: Path
-    model: str = "claude-sonnet-4-6"
+    model: str = "claude-sonnet-5"
     max_turns: int = 20
     timeout_seconds: int = 60
     owner_id: str = ""  # Discord user ID of the bot owner
