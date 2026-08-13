@@ -31,6 +31,11 @@ class Config:
         os.getenv("DB_PATH", str(BASE_DIR / "src" / "db" / "sessions.sqlite"))
     ).resolve()
 
+    # Brave Search API（web / web_context / image 搜尋工具用）
+    BRAVE_SEARCH_API_KEY: str | None = os.getenv("BRAVE_SEARCH_API_KEY")
+    # 每月 Brave 搜尋次數上限（免費額度 US$5 ≈ 1000 次/月）
+    BRAVE_MONTHLY_LIMIT: int = int(os.getenv("BRAVE_MONTHLY_LIMIT", "1000"))
+
     @classmethod
     def validate(cls) -> None:
         if not cls.DISCORD_TOKEN:

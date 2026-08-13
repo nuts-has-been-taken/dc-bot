@@ -25,6 +25,7 @@ from src.agent.tools.registry import (
     build_discord_server,
     build_job_analysis_server,
     build_job_search_server,
+    build_websearch_server,
 )
 
 
@@ -110,6 +111,7 @@ class AgentRunner:
         self._mcp_servers: dict = {
             "job_search": build_job_search_server(),
             "job_analysis": build_job_analysis_server(),
+            "websearch": build_websearch_server(),
         }
         if discord_toolset is not None:
             self._mcp_servers["discord"] = build_discord_server(discord_toolset)
@@ -118,6 +120,9 @@ class AgentRunner:
         self._mcp_tool_names: list[str] = [
             "mcp__job_search__search_104_jobs",
             "mcp__job_analysis__analyze_104_job",
+            "mcp__websearch__web_search",
+            "mcp__websearch__web_search_context",
+            "mcp__websearch__image_search",
         ]
         if discord_toolset is not None:
             self._mcp_tool_names.extend([

@@ -12,6 +12,7 @@ from claude_agent_sdk import create_sdk_mcp_server, tool
 from src.agent.tools.discord_mcp import DiscordToolset
 from src.agent.tools.job_analysis_mcp import analyze_104_job_impl
 from src.agent.tools.job_search_mcp import search_104_jobs_impl
+from src.agent.tools.websearch_mcp import web_search_impl
 
 
 def build_job_search_server():
@@ -56,6 +57,74 @@ def build_job_analysis_server():
 
     return create_sdk_mcp_server(
         "job_analysis", version="1.0.0", tools=[analyze_104_job]
+    )
+
+
+def build_websearch_server():
+    @tool(
+        "web_search",
+        "搜尋網際網路，回傳排名的網頁結果（標題、網址、摘要）。需要找來源、頁面或網址時使用。",
+        {"query": str, "count": int, "freshness": str, "country": str, "search_lang": str},
+    )
+    async def web_search(args: dict[str, Any]) -> dict[str, Any]:
+        result = await web_search_impl(
+            query=args["query"],
+            search_type="web",
+            count=int(args.get("count", 8)),
+            freshness=args.get("freshness"),
+            country=args.get("country"),
+            search_lang=args.get("search_lang"),
+        )
+        return {"content": [{"type": "text", "text": result["formatted"]}]}
+
+    @tool(
+        "web_search_context",
+        "搜尋網際網路並回傳從多個來源擷取、適合回答事實性問題的內容（含來源網址，可引用）。需要閱讀網頁內容來回答問題時優先使用此工具。",
+        {
+            "query": str,
+            "count": int,
+            "max_tokens": int,
+            "freshness": str,
+            "country": str,
+            "search_lang": str,
+        },
+    )
+    async def web_search_context(args: dict[str, Any]) -> dict[str, Any]:
+        result = await web_search_impl(
+            query=args["query"],
+            search_type="context",
+            count=int(args.get("count", 5)),
+            max_tokens=int(args.get("max_tokens", 4096)),
+            freshness=args.get("freshness"),
+            country=args.get("country"),
+            search_lang=args.get("search_lang"),
+        )
+        return {"content": [{"type": "text", "text": result["formatted"]}]}
+
+    @tool(
+        "image_search",
+        "搜尋網際網路上既有的圖片，回傳圖片網址與來源。當使用者要求尋找、顯示、觀看圖片或視覺參考時使用。",
+        {
+            "query": str,
+            "count": int,
+            "country": str,
+            "search_lang": str,
+        },
+    )
+    async def image_search(args: dict[str, Any]) -> dict[str, Any]:
+        result = await web_search_impl(
+            query=args["query"],
+            search_type="image",
+            count=int(args.get("count", 8)),
+            country=args.get("country"),
+            search_lang=args.get("search_lang"),
+        )
+        return {"content": [{"type": "text", "text": result["formatted"]}]}
+
+    return create_sdk_mcp_server(
+        "websearch",
+        version="1.0.0",
+        tools=[web_search, web_search_context, image_search],
     )
 
 
