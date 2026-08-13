@@ -24,7 +24,7 @@ class Config:
     ]
 
     # Agent
-    ANTHROPIC_MODEL: str = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")
+    ANTHROPIC_MODEL: str = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-5")
     DISCORD_OWNER_ID: str = os.getenv("DISCORD_OWNER_ID", "")
     DATA_DIR: Path = Path(os.getenv("DATA_DIR", str(BASE_DIR / "data"))).resolve()
     DB_PATH: Path = Path(
