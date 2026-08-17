@@ -27,6 +27,6 @@ def test_config_agent_defaults(monkeypatch, tmp_path):
     reload(config_mod)
 
     cfg = config_mod.Config.get_agent_config()
-    assert cfg["model"] == "claude-sonnet-4-6"
+    assert cfg["model"] == "claude-sonnet-5"
     assert Path(cfg["data_dir"]).name == "data"
     assert Path(cfg["db_path"]).name == "sessions.sqlite"

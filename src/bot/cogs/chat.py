@@ -14,6 +14,27 @@ from src.bot.streamer import DiscordStreamer
 
 Mode = Literal["chat", "work", "dm"]
 
+# attachment types we treat as images (announce to the agent)
+IMAGE_CONTENT_TYPES = ("image/",)
+
+
+def _extract_image_attachments(
+    message: discord.Message,
+) -> list[dict[str, str]]:
+    """Return [{filename, url}] for image attachments, discarding the rest.
+
+    Only metadata (URL, filename) is surfaced to the agent — never the binary.
+    This keeps user-provided attachment URLs from becoming a download / SSRF
+    vector for the bot.
+    """
+    out: list[dict[str, str]] = []
+    for att in message.attachments:
+        ctype = (att.content_type or "").lower()
+        if ctype.startswith(IMAGE_CONTENT_TYPES):
+            out.append({"filename": att.filename or "image", "url": att.url})
+    return out
+
+
 DEFAULT_CONTEXT_LIMIT = 25
 # Rough token proxy: drop oldest channel messages once formatted context
 # exceeds this many characters.
@@ -144,6 +165,7 @@ class ChatCog(commands.Cog):
                 user_name=str(message.author.display_name),
                 user_id=str(message.author.id),
                 channel_context=ctx,
+                attachments=_extract_image_attachments(message),
             ):
                 await streamer.handle(event)
             await streamer.finalize()
@@ -180,6 +202,7 @@ class ChatCog(commands.Cog):
                 user_id=str(message.author.id),
                 resume=sess.claude_session_id,
                 thread_id=thread_id,
+                attachments=_extract_image_attachments(message),
             ):
                 await streamer.handle(event)
                 if event.type == AgentEventType.DONE:

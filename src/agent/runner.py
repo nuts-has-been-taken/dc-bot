@@ -60,6 +60,26 @@ def _format_channel_context(ctx: list[ChannelMsg]) -> str:
     return "\n".join(lines)
 
 
+def _format_attachments(attachments: list[dict[str, str]] | None) -> str:
+    """Describe image attachments to the agent (URL + filename only).
+
+    We intentionally do NOT download, read, or open these URLs — they are
+    user-supplied and would otherwise become a download / SSRF vector for the
+    bot. The agent may reference the URL (e.g. re-post it via send_image) but
+    must never fetch it.
+    """
+    if not attachments:
+        return ""
+    lines = ["[User uploaded image attachment(s)]"]
+    for a in attachments:
+        lines.append(f"- {a.get('filename', 'image')} -> {a.get('url', '')}")
+    lines.append(
+        "⚠️ 安全：這些是使用者提供的 URL。不要下載 / 讀取 / fetch 這些網址"
+        "（可能不安全）。如需用圖，直接引用其網址，或用 send_image 貼給使用者。"
+    )
+    return "\n".join(lines)
+
+
 def _make_path_guard(allowed_root: Path):
     """Return a can_use_tool callback that restricts FS tools to allowed_root."""
     allowed_root = allowed_root.resolve()
@@ -127,6 +147,7 @@ class AgentRunner:
         if discord_toolset is not None:
             self._mcp_tool_names.extend([
                 "mcp__discord__fetch_channel_history",
+                "mcp__discord__send_image",
                 "mcp__discord__send_embed",
                 "mcp__discord__react_to_message",
                 "mcp__discord__get_member_info",
@@ -136,11 +157,17 @@ class AgentRunner:
         self,
         user_input: str,
         channel_context: list[ChannelMsg] | None,
+        attachments: list[dict[str, str]] | None = None,
     ) -> str:
+        parts: list[str] = []
         preamble = _format_channel_context(channel_context or [])
-        if not preamble:
-            return user_input
-        return f"{preamble}\n\n[User's current message]\n{user_input}"
+        if preamble:
+            parts.append(preamble)
+        atts = _format_attachments(attachments)
+        if atts:
+            parts.append(atts)
+        parts.append(f"[User's current message]\n{user_input}")
+        return "\n\n".join(parts)
 
     def _build_options(
         self,
@@ -177,8 +204,11 @@ class AgentRunner:
         resume: str | None = None,
         channel_context: list[ChannelMsg] | None = None,
         thread_id: str | None = None,
+        attachments: list[dict[str, str]] | None = None,
     ) -> AsyncIterator[AgentEvent]:
-        prompt_input = self._build_prompt_input(user_input, channel_context)
+        prompt_input = self._build_prompt_input(
+            user_input, channel_context, attachments
+        )
         options = self._build_options(mode, user_name, user_id, thread_id, resume)
 
         session_id: str | None = None

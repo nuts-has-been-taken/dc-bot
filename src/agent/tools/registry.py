@@ -164,6 +164,20 @@ def build_discord_server(toolset: DiscordToolset):
         return {"content": [{"type": "text", "text": "sent" if ok else "failed"}]}
 
     @tool(
+        "send_image",
+        "在 Discord 頻道送一張圖片（給圖片的 http/https URL，會以 embed 呈現）。"
+        "不要 fetch / 下載使用者上傳的圖片 URL，直接把 URL 傳進來即可。",
+        {"channel_id": str, "image_url": str, "caption": str},
+    )
+    async def send_image(args: dict[str, Any]) -> dict[str, Any]:
+        ok = await toolset.send_image(
+            channel_id=int(args["channel_id"]),
+            image_url=args["image_url"],
+            caption=args.get("caption"),
+        )
+        return {"content": [{"type": "text", "text": "sent" if ok else "failed"}]}
+
+    @tool(
         "react_to_message",
         "對某則 Discord 訊息加 emoji reaction。",
         {"channel_id": str, "message_id": str, "emoji": str},
@@ -193,6 +207,7 @@ def build_discord_server(toolset: DiscordToolset):
         version="1.0.0",
         tools=[
             fetch_channel_history,
+            send_image,
             send_embed,
             react_to_message,
             get_member_info,

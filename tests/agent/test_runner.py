@@ -97,3 +97,49 @@ async def test_run_includes_channel_context_preamble(tmp_path):
     assert "alice: hi" in captured_prompt["input"]
     assert "bob: yo" in captured_prompt["input"]
     assert "what?" in captured_prompt["input"]
+
+
+@pytest.mark.asyncio
+async def test_run_formats_image_attachments_with_safety_note(tmp_path):
+    cfg = AgentConfig(
+        data_dir=tmp_path / "data", db_path=tmp_path / "s.sqlite"
+    )
+    runner = AgentRunner(cfg, discord_toolset=None)
+
+    captured_prompt = {}
+
+    async def capture(*args, **kwargs):
+        prompt_arg = kwargs.get("prompt") or (args[0] if args else None)
+        collected = []
+        async for chunk in prompt_arg:
+            if isinstance(chunk, dict):
+                msg = chunk.get("message") or {}
+                collected.append(msg.get("content", ""))
+            else:
+                collected.append(str(chunk))
+        captured_prompt["input"] = "\n".join(collected)
+        yield ResultMessage(
+            subtype="success",
+            duration_ms=0,
+            duration_api_ms=0,
+            is_error=False,
+            num_turns=1,
+            session_id="s",
+        )
+
+    attachments = [
+        {"filename": "cat.jpg", "url": "https://cdn.discordapp.com/x/cat.jpg"},
+    ]
+    with patch("src.agent.runner.sdk_query", side_effect=capture):
+        async for _ in runner.run(
+            user_input="這是我的 cat",
+            mode="oneshot",
+            user_name="Alice",
+            attachments=attachments,
+        ):
+            pass
+
+    assert "cat.jpg" in captured_prompt["input"]
+    assert "https://cdn.discordapp.com/x/cat.jpg" in captured_prompt["input"]
+    assert "不要下載" in captured_prompt["input"]
+    assert "send_image" in captured_prompt["input"]

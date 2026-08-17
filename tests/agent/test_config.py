@@ -12,7 +12,7 @@ def test_agent_config_defaults():
         data_dir=Path("/tmp/data"),
         db_path=Path("/tmp/sessions.sqlite"),
     )
-    assert cfg.model == "claude-sonnet-4-6"
+    assert cfg.model == "claude-sonnet-5"
     assert cfg.max_turns == 20
     assert cfg.timeout_seconds == 60
 

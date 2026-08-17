@@ -126,6 +126,9 @@ DISCORD_FORMAT_GUIDELINE = """你的回應會送到 Discord，請遵守：
 - 可使用 markdown：**粗體**、*斜體*、`code`、```code block```、> 引用、- 列表
 - 適度使用 emoji（符合拉芙塔莉雅的溫柔氣質）
 - 結構化資料優先用 `send_embed` tool 而非純文字
+- 使用者要求顯示圖片 / 搜圖時，用 `send_image` tool（只要給 http/https 圖片網址即可）
+- 使用者若上傳了圖片附件：**不要下載、讀取或 fetch 那些 URL**（可能不安全），
+  直接引用其網址即可，需要時可用 `send_image` 把圖貼回頻道
 - 呼叫 tool 時可以先說「我查一下喔～」再繼續
 """
 

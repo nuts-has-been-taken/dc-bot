@@ -5,8 +5,14 @@ coroutines get plain dicts / bools suitable for passing through the agent.
 """
 
 from typing import Any
+from urllib.parse import urlparse
 
 import discord
+
+# Only http(s) image URLs are accepted — blocks file://, attachment://,
+# data:, javascript:, etc. so a malicious agent call can't point Discord at
+# an unexpected scheme.
+_ALLOWED_IMAGE_SCHEMES = {"http", "https"}
 
 
 class DiscordToolset:
@@ -29,6 +35,29 @@ class DiscordToolset:
                 }
             )
         return list(reversed(out))  # oldest → newest
+
+    async def send_image(
+        self,
+        channel_id: int,
+        image_url: str,
+        caption: str | None = None,
+    ) -> bool:
+        """Post an image to a channel via an embed with set_image(url=...).
+
+        Only takes a URL (never downloads / stores the binary). The scheme is
+        limited to http(s); anything else is rejected to avoid pointing Discord
+        at local files or other non-HTTP resources.
+        """
+        scheme = urlparse(image_url).scheme.lower()
+        if scheme not in _ALLOWED_IMAGE_SCHEMES:
+            return False
+        channel = self.bot.get_channel(channel_id)
+        if channel is None:
+            return False
+        embed = discord.Embed(description=caption or "", color=0xEE82EE)
+        embed.set_image(url=image_url)
+        await channel.send(embed=embed)
+        return True
 
     async def send_embed(
         self,

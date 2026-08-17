@@ -60,3 +60,50 @@ async def test_fetch_channel_history_missing_channel_returns_empty():
     bot.get_channel = MagicMock(return_value=None)
     tools = DiscordToolset(bot)
     assert await tools.fetch_channel_history(channel_id=99) == []
+
+
+@pytest.mark.asyncio
+async def test_send_image_posts_embed_with_set_image():
+    bot = MagicMock()
+    channel = MagicMock()
+    channel.send = AsyncMock()
+    bot.get_channel = MagicMock(return_value=channel)
+
+    tools = DiscordToolset(bot)
+    ok = await tools.send_image(
+        channel_id=1, image_url="https://cdn.example.com/a.jpg", caption="看這張"
+    )
+
+    channel.send.assert_awaited_once()
+    embed = channel.send.await_args.kwargs["embed"]
+    assert embed.image.url == "https://cdn.example.com/a.jpg"
+    assert embed.description == "看這張"
+    assert ok is True
+
+
+@pytest.mark.asyncio
+async def test_send_image_rejects_non_http_scheme():
+    bot = MagicMock()
+    channel = MagicMock()
+    bot.get_channel = MagicMock(return_value=channel)
+
+    tools = DiscordToolset(bot)
+    ok = await tools.send_image(
+        channel_id=1, image_url="file:///etc/passwd", caption=None
+    )
+
+    assert ok is False
+    channel.send.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_send_image_missing_channel_returns_false():
+    bot = MagicMock()
+    bot.get_channel = MagicMock(return_value=None)
+    tools = DiscordToolset(bot)
+    assert (
+        await tools.send_image(
+            channel_id=99, image_url="https://cdn.example.com/a.jpg", caption=None
+        )
+        is False
+    )
